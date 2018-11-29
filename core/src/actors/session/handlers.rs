@@ -16,13 +16,13 @@ use crate::actors::{
     codec::BytesMut,
     peers_manager,
     sessions_manager::{messages::Consolidate, SessionsManager},
-    storage_manager::{messages::Get, StorageManager},
 };
 
 use super::{
     messages::{AnnounceItems, GetPeers, SessionUnitResult},
     Session,
 };
+use crate::actors::blocks_manager::messages::GetBlock;
 use witnet_data_structures::{
     builders::from_address,
     chain::{Block, CheckpointBeacon, Hash, InvVector},
@@ -386,46 +386,39 @@ fn handshake_version(session: &mut Session, sender_address: &Address) -> Vec<Wit
 }
 /// Function called when GetData message is received
 fn send_block_msg(session: &mut Session, ctx: &mut Context<Session>, hash: &Hash) {
-    let Hash::SHA256(block_key) = *hash;
-
+    let hash = *hash;
     // TODO Use Inventory Manager
-    // Add block from storage:
-    // Get storage manager actor address
-    let storage_manager_addr = System::current().registry().get::<StorageManager>();
-    storage_manager_addr
+    // Get blocks manager actor address
+    let blocks_manager_addr = System::current().registry().get::<BlocksManager>();
+    blocks_manager_addr
         // Send a message to read the block from the storage
-        .send(Get::<Block>::new(block_key.to_vec()))
+        .send(GetBlock { hash })
         .into_actor(session)
         // Process the response
         .then(|res, _act, _ctx| match res {
             Err(e) => {
                 // Error when sending message
-                error!("Unsuccessful communication with storage manager: {}", e);
+                error!("Unsuccessful communication with blocks manager: {}", e);
                 actix::fut::err(())
             }
             Ok(res) => match res {
                 Err(e) => {
-                    // Storage error
-                    error!("Error while getting block from storage: {}", e);
+                    // Block not found
+                    error!("Error while getting block from blocks manager: {:?}", e);
                     actix::fut::err(())
                 }
                 Ok(res) => actix::fut::ok(res),
             },
         })
-        .and_then(|block_from_storage, act, _ctx| {
-            // block_from_storage can be None if the storage does not contain that key
-            if let Some(block_from_storage) = block_from_storage {
-                let header = block_from_storage.header;
-                let txns = block_from_storage.txns;
+        .and_then(|block, act, _ctx| {
+            let header = block.header;
+            let txns = block.txns;
 
-                // Build Block msg
-                let block_msg = WitnetMessage::build_block(header, txns);
+            // Build Block msg
+            let block_msg = WitnetMessage::build_block(header, txns);
 
-                // Send Block msg
-                act.send_message(block_msg);
-            } else {
-                warn!("Inventory element not found in Storage");
-            }
+            // Send Block msg
+            act.send_message(block_msg);
 
             actix::fut::ok(())
         })
