@@ -12,11 +12,14 @@
 //! you use in your Rust code to interact with the loaded
 //! configuration.
 #![cfg_attr(test, allow(dead_code, unused_macros, unused_imports))]
+#![deny(rust_2018_idioms)]
+#![deny(non_upper_case_globals)]
+#![deny(non_camel_case_types)]
+#![deny(non_snake_case)]
+#![deny(unused_mut)]
+#![deny(missing_docs)]
 
-#[macro_use]
-extern crate serde_derive;
-
-extern crate failure;
+use failure;
 
 pub mod config;
 pub mod defaults;

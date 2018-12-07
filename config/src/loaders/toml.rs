@@ -27,7 +27,7 @@ pub enum Error {
 /// the user what error happened when loading/parsing the
 /// configuration.
 impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Error::IOError(e) => e.fmt(f),
             Error::ParseError(e) => e.fmt(f),

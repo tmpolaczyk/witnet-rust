@@ -8,6 +8,8 @@
 //! later, the `config` module will use this partial config object and
 //! the environment-specific defaults (see the `environment` module)
 //! to produce a __total__ (no `Option` fields) configuration object.
+use serde::{Deserialize, Deserializer};
+use serde_derive::Deserialize;
 use std::collections::HashSet;
 use std::default::Default;
 use std::net::SocketAddr;
@@ -132,14 +134,13 @@ pub struct JsonRPC {
 }
 
 impl Config {
+    /// Default configuration parameters for mainnet
     pub fn default_mainnet() -> Self {
         let mut default = Config::default();
         default.environment = Environment::Mainnet;
         default
     }
 }
-
-use serde::{Deserialize, Deserializer};
 
 // Create a duration type from a u64 representing seconds
 fn from_secs<'de, D>(deserializer: D) -> Result<Option<Duration>, D::Error>

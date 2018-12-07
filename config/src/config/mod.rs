@@ -125,8 +125,10 @@ pub struct JsonRPC {
 }
 
 impl Config {
+    /// Create a `Config` from a partial `Config`, with the default parameters
+    /// set to the defaults for the given environment.
     pub fn from_partial(config: &partial::Config) -> Self {
-        let defaults: Box<Defaults> = match config.environment {
+        let defaults: Box<dyn Defaults> = match config.environment {
             Environment::Mainnet => {
                 panic!("Config with mainnet environment is currently not allowed");
             }
@@ -161,6 +163,10 @@ impl Config {
     }
 }
 
+// This cannot be inside a `impl ConsensusConstants` block because
+// `ConsensusConstants` is defined in another crate
+/// Create `ConsensusConstants` from a partial struct, with the default
+/// parameters given by the `defaults` argument
 pub fn consensus_constants_from_partial(
     config: &partial::ConsensusConstants,
     defaults: &dyn Defaults,
@@ -196,7 +202,9 @@ impl Default for Config {
 }
 
 impl Connections {
-    pub fn from_partial(config: &partial::Connections, defaults: &Defaults) -> Self {
+    /// Create `Self` from a partial struct, with the default parameters
+    /// given by the `defaults` argument
+    pub fn from_partial(config: &partial::Connections, defaults: &dyn Defaults) -> Self {
         Connections {
             server_addr: config
                 .server_addr
@@ -235,7 +243,9 @@ impl Connections {
 }
 
 impl Storage {
-    pub fn from_partial(config: &partial::Storage, defaults: &Defaults) -> Self {
+    /// Create `Self` from a partial struct, with the default parameters
+    /// given by the `defaults` argument
+    pub fn from_partial(config: &partial::Storage, defaults: &dyn Defaults) -> Self {
         Storage {
             db_path: config
                 .db_path
@@ -246,6 +256,8 @@ impl Storage {
 }
 
 impl JsonRPC {
+    /// Create `Self` from a partial struct, with the default parameters
+    /// given by the `defaults` argument
     pub fn from_partial(config: &partial::JsonRPC, defaults: &dyn Defaults) -> Self {
         JsonRPC {
             enabled: config
@@ -266,7 +278,7 @@ mod tests {
 
     #[test]
     fn test_storage_default_from_partial() {
-        let defaults: Box<Defaults> = Box::new(Testnet1);
+        let defaults: Box<dyn Defaults> = Box::new(Testnet1);
         let partial_config = partial::Storage::default();
         let config = Storage::from_partial(&partial_config, &*defaults);
 
@@ -275,7 +287,7 @@ mod tests {
 
     #[test]
     fn test_storage_from_partial() {
-        let defaults: Box<Defaults> = Box::new(Testnet1);
+        let defaults: Box<dyn Defaults> = Box::new(Testnet1);
         let partial_config = partial::Storage {
             db_path: Some(PathBuf::from("other")),
         };
@@ -286,7 +298,7 @@ mod tests {
 
     #[test]
     fn test_connections_default_from_partial() {
-        let defaults: Box<Defaults> = Box::new(Testnet1);
+        let defaults: Box<dyn Defaults> = Box::new(Testnet1);
         let partial_config = partial::Connections::default();
         let config = Connections::from_partial(&partial_config, &*defaults);
 
@@ -314,7 +326,7 @@ mod tests {
 
     #[test]
     fn test_connections_from_partial() {
-        let defaults: Box<Defaults> = Box::new(Testnet1);
+        let defaults: Box<dyn Defaults> = Box::new(Testnet1);
         let addr: SocketAddr = "127.0.0.1:3000".parse().unwrap();
         let partial_config = partial::Connections {
             server_addr: Some(addr),
@@ -340,7 +352,7 @@ mod tests {
 
     #[test]
     fn test_jsonrpc_default_from_partial() {
-        let defaults: Box<Defaults> = Box::new(Testnet1);
+        let defaults: Box<dyn Defaults> = Box::new(Testnet1);
         let partial_config = partial::JsonRPC::default();
         let config = JsonRPC::from_partial(&partial_config, &*defaults);
 
@@ -349,7 +361,7 @@ mod tests {
 
     #[test]
     fn test_jsonrpc_from_partial() {
-        let defaults: Box<Defaults> = Box::new(Testnet1);
+        let defaults: Box<dyn Defaults> = Box::new(Testnet1);
         let addr: SocketAddr = "127.0.0.1:4000".parse().unwrap();
         let partial_config = partial::JsonRPC {
             enabled: None,
