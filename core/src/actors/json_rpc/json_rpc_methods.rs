@@ -1,8 +1,9 @@
-#[cfg(test)]
-use self::mock_actix::System;
-use crate::actors::chain_manager::{messages::AddNewBlock, ChainManager};
-#[cfg(not(test))]
+use crate::actors::chain_manager::messages::AddNewBlock;
 use actix::System;
+#[cfg(test)]
+type ChainManager = actix::actors::mocker::Mocker<crate::actors::chain_manager::ChainManager>;
+#[cfg(not(test))]
+use crate::actors::chain_manager::ChainManager;
 use jsonrpc_core::{IoHandler, Params, Value};
 use log::info;
 use serde_derive::{Deserialize, Serialize};
@@ -73,34 +74,6 @@ pub fn inventory(inv_elem: InventoryItem) -> Result<Value, jsonrpc_core::Error> 
 }
 
 #[cfg(test)]
-mod mock_actix {
-    pub struct System;
-
-    pub struct SystemRegistry;
-
-    pub struct Addr;
-
-    impl System {
-        pub fn current() -> Self {
-            System
-        }
-        pub fn registry(&self) -> &SystemRegistry {
-            &SystemRegistry
-        }
-    }
-
-    impl SystemRegistry {
-        pub fn get<T>(&self) -> Addr {
-            Addr
-        }
-    }
-
-    impl Addr {
-        pub fn do_send<T>(&self, _msg: T) {}
-    }
-}
-
-#[cfg(test)]
 mod tests {
     use super::*;
 
@@ -137,18 +110,65 @@ mod tests {
             txns: vec![Transaction],
         };
 
-        let inv_elem = InventoryItem::Block(block);
+        let inv_elem = InventoryItem::Block(block.clone());
         let s = serde_json::to_string(&inv_elem).unwrap();
         let msg = format!(
             r#"{{"jsonrpc":"2.0","method":"inventory","params":{},"id":1}}"#,
             s
         );
 
+        // Start an empty actix system
+        // This one line is all that is needed to test a function which uses
+        // do_send and never waits for the response. The handlers will never be
+        // executed, so even the Mocker is not needed
+        let system = System::new("test");
+
+        use actix::Actor;
+        use std::cell::Cell;
+        use std::rc::Rc;
+        // Call count. This could be implemented inside Mocker to avoid duplication.
+        // Or maybe just do a SystemMocker to avoid having to define mockers for each actor
+        let call_count = Rc::new(Cell::new(0));
+        let call_count2 = Rc::clone(&call_count);
+        // Setup the mocker actor
+        // https://github.com/actix/actix/commit/dfdafda274a4761aea40051141a820170e96de80
+        let mocker_addr = ChainManager::mock(Box::new(move |msg, _ctx| {
+            // One if let branch for each type of message
+            if let Some(b) = msg.downcast_ref::<AddNewBlock>() {
+                call_count2.set(call_count2.get() + 1);
+                // This is the only piece of code "unique" to this test, the rest
+                // would be copied exactly to other tests
+                {
+                    // Check that the block is sent correctly
+                    assert_eq!(b.block, block);
+                }
+                // Stop the system after receiving the first message
+                if call_count2.get() >= 1 {
+                    System::current().stop();
+                }
+                // Even if the system will stop, this return type must be valid
+                // Box::new(None) does not work, but we only need to set the type
+                // signature, the actual value will not be checked, so we just set it to zero.
+                // For more information about runtime typing,
+                // see `downcast_ref` in `std::any::Any`
+                let res: <AddNewBlock as actix::Message>::Result = unsafe { std::mem::zeroed() };
+                Box::new(Some(res))
+            } else {
+                panic!("Invalid message received");
+            }
+        }))
+        .start();
+        // Important: add the modified mocker into the registry
+        System::current().registry().set(mocker_addr);
+
         // Expected result: true
         let expected = r#"{"jsonrpc":"2.0","result":true,"id":1}"#.to_string();
         let io = jsonrpc_io_handler();
         let response = io.handle_request_sync(&msg);
         assert_eq!(response, Some(expected));
+
+        system.run();
+        assert_eq!(call_count.get(), 1);
     }
 
     #[test]
