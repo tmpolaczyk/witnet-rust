@@ -2613,6 +2613,7 @@ name = "witnet_validations"
 version = "0.1.2"
 dependencies = [
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "witnet_crypto 0.1.2",
  "witnet_data_structures 0.1.2",
  "witnet_rad 0.1.2",
