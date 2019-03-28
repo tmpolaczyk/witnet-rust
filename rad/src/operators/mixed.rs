@@ -1,7 +1,7 @@
 use witnet_data_structures::serializers::decoders::TryFrom;
 
 use crate::error::RadError;
-use crate::types::{float::RadonFloat, map::RadonMap, mixed::RadonMixed, RadonType};
+use crate::types::{array::RadonArray, float::RadonFloat, map::RadonMap, mixed::RadonMixed, RadonType};
 
 pub fn to_float(input: RadonMixed) -> Result<RadonFloat, RadError> {
     RadonFloat::try_from(input.value())
@@ -10,6 +10,10 @@ pub fn to_float(input: RadonMixed) -> Result<RadonFloat, RadError> {
 pub fn to_map(input: RadonMixed) -> Result<RadonMap, RadError> {
     RadonMap::try_from(input.value())
 }
+pub fn to_array(input: RadonMixed) -> Result<RadonArray, RadError> {
+    RadonArray::try_from(input.value())
+}
+
 
 #[test]
 fn test_as_float() {
