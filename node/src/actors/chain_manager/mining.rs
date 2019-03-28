@@ -28,6 +28,7 @@ use witnet_data_structures::{
 };
 use witnet_rad::types::RadonTypes;
 use witnet_storage::storage::Storable;
+use witnet_validations::validations::validate_block;
 use witnet_validations::validations::{
     block_reward, merkle_tree_root, transaction_fee, verify_poe_data_request,
 };
@@ -122,14 +123,29 @@ impl ChainManager {
                             &tally_transactions,
                         );
 
-                        // Send AddNewBlock message to self
-                        // This will run all the validations again
-                        act.handle(
-                            AddCandidates {
-                                blocks: vec![block],
-                            },
-                            ctx,
-                        );
+                        match validate_block(
+                            &block,
+                            current_epoch,
+                            beacon,
+                            act.genesis_block_hash,
+                            &act.chain_state.unspent_outputs_pool,
+                            &act.transactions_pool,
+                            &act.data_request_pool,
+                        ) {
+                            Ok(_) => {
+                                // Send AddNewBlock message to self
+                                // This will run all the validations again
+                                act.handle(
+                                    AddCandidates {
+                                        blocks: vec![block],
+                                    },
+                                    ctx,
+                                );
+                            }
+
+                            Err(e) => error!("Error trying to mine a block: {}", e),
+                        }
+
                         actix::fut::ok(())
                     })
                     .wait(ctx);
