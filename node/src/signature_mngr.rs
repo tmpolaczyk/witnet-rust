@@ -7,9 +7,17 @@ use actix::prelude::*;
 use failure;
 use failure::bail;
 use futures::future::Future;
+use log;
 
-use witnet_crypto::{key::SK, signature};
-use witnet_data_structures::chain::{Hash, Hashable};
+use crate::{actors::storage_keys::EXTENDED_SK_KEY, storage_mngr};
+
+use witnet_crypto::{
+    key::{ExtendedSK, MasterKeyGen, SK},
+    mnemonic::MnemonicGen,
+    signature,
+};
+
+use witnet_data_structures::chain::{ExtendedSecretKey, Hash, Hashable};
 
 /// Start the signature manager
 pub fn start() {
@@ -48,11 +56,56 @@ struct SignatureManager {
 struct SetKey(SK);
 struct Sign(Vec<u8>);
 
+fn persist_extended_sk(extended_sk: ExtendedSK) -> impl Future<Item = (), Error = failure::Error> {
+    let extended_secret_key = ExtendedSecretKey::from(extended_sk);
+
+    storage_mngr::put(&EXTENDED_SK_KEY, &extended_secret_key).inspect(|_| {
+        log::debug!("Successfully persisted the extended secret key into storage");
+    })
+}
+
 impl Actor for SignatureManager {
     type Context = Context<Self>;
 
-    fn started(&mut self, _ctx: &mut Self::Context) {
+    fn started(&mut self, ctx: &mut Self::Context) {
         log::debug!("Signature Manager actor has been started!");
+
+        storage_mngr::get::<_, ExtendedSecretKey>(&EXTENDED_SK_KEY)
+            .and_then(move |extended_sk_from_storage| {
+                extended_sk_from_storage.map_or_else(
+                    || -> Box<dyn Future<Item = (), Error = failure::Error>> {
+                        log::warn!("No extended secret key in storage");
+
+                        // Create a new Secret Key
+                        let mnemonic = MnemonicGen::new().generate();
+                        let seed = mnemonic.seed("");
+
+                        match MasterKeyGen::new(seed).generate() {
+                            Ok(extended_sk) => {
+                                let fut = set_key(extended_sk.secret_key)
+                                    .join(persist_extended_sk(extended_sk))
+                                    .map(|_| ());
+
+                                Box::new(fut)
+                            }
+                            Err(e) => {
+                                let fut = futures::future::err(e.into());
+
+                                Box::new(fut)
+                            }
+                        }
+                    },
+                    |extended_secret_key| {
+                        let extended_sk: ExtendedSK = extended_secret_key.into();
+                        let fut = set_key(extended_sk.secret_key);
+
+                        Box::new(fut)
+                    },
+                )
+            })
+            .map_err(|e| log::error!("Couldn't initialize Signature Manager: {}", e))
+            .into_actor(self)
+            .wait(ctx);
     }
 }
 
