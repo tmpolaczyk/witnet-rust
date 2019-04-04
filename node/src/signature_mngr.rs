@@ -12,12 +12,14 @@ use log;
 use crate::{actors::storage_keys::EXTENDED_SK_KEY, storage_mngr};
 
 use witnet_crypto::{
-    key::{ExtendedSK, MasterKeyGen, SK},
+    key::{ExtendedSK, MasterKeyGen, SignContext, PK, SK},
     mnemonic::MnemonicGen,
     signature,
 };
 
-use witnet_data_structures::chain::{ExtendedSecretKey, Hash, Hashable};
+use witnet_data_structures::chain::{
+    ExtendedSecretKey, Hash, Hashable, KeyedSignature, PublicKey, Signature,
+};
 
 /// Start the signature manager
 pub fn start() {
@@ -36,7 +38,7 @@ pub fn set_key(key: SK) -> impl Future<Item = (), Error = failure::Error> {
 /// Sign a piece of data with the stored key.
 ///
 /// This might fail if the manager has not been initialized with a key
-pub fn sign<T>(data: &T) -> impl Future<Item = signature::Signature, Error = failure::Error>
+pub fn sign<T>(data: &T) -> impl Future<Item = KeyedSignature, Error = failure::Error>
 where
     T: Hashable,
 {
@@ -50,7 +52,7 @@ where
 
 #[derive(Debug, Default)]
 struct SignatureManager {
-    key: Option<SK>,
+    keypair: Option<(SK, PK)>,
 }
 
 struct SetKey(SK);
@@ -118,14 +120,18 @@ impl Message for SetKey {
 }
 
 impl Message for Sign {
-    type Result = Result<signature::Signature, failure::Error>;
+    type Result = Result<KeyedSignature, failure::Error>;
 }
 
 impl Handler<SetKey> for SignatureManager {
     type Result = <SetKey as Message>::Result;
 
-    fn handle(&mut self, SetKey(key): SetKey, _ctx: &mut Self::Context) -> Self::Result {
-        self.key = Some(key);
+    fn handle(&mut self, SetKey(secret_key): SetKey, _ctx: &mut Self::Context) -> Self::Result {
+        let public_key = PK::from_secret_key(&SignContext::signing_only(), &secret_key);
+        self.keypair = Some((secret_key, public_key));
+
+        log::info!("Signature Manager received a key and is ready to sign");
+
         Ok(())
     }
 }
@@ -134,8 +140,16 @@ impl Handler<Sign> for SignatureManager {
     type Result = <Sign as Message>::Result;
 
     fn handle(&mut self, Sign(data): Sign, _ctx: &mut Self::Context) -> Self::Result {
-        match self.key {
-            Some(key) => Ok(signature::sign(key, &data)),
+        match self.keypair {
+            Some((secret, public)) => {
+                let signature = signature::sign(secret, &data);
+                let keyed_signature = KeyedSignature {
+                    signature: Signature::from(signature),
+                    public_key: PublicKey::from(public),
+                };
+
+                Ok(keyed_signature)
+            }
             None => bail!("Signature Manager cannot sign because it contains no key"),
         }
     }
