@@ -55,6 +55,14 @@ struct SignatureManager {
     keypair: Option<(SK, PK)>,
 }
 
+impl SignatureManager {
+    fn set_key(&mut self, key: SK) {
+        let public_key = PK::from_secret_key(&SignContext::signing_only(), &key);
+        self.keypair = Some((key, public_key));
+        log::info!("Signature Manager received a key and is ready to sign");
+    }
+}
+
 struct SetKey(SK);
 struct Sign(Vec<u8>);
 
@@ -75,7 +83,7 @@ impl Actor for SignatureManager {
         storage_mngr::get::<_, ExtendedSecretKey>(&EXTENDED_SK_KEY)
             .and_then(move |extended_sk_from_storage| {
                 extended_sk_from_storage.map_or_else(
-                    || -> Box<dyn Future<Item = (), Error = failure::Error>> {
+                    || -> Box<dyn Future<Item = ExtendedSK, Error = failure::Error>> {
                         log::warn!("No extended secret key in storage");
 
                         // Create a new Secret Key
@@ -84,9 +92,8 @@ impl Actor for SignatureManager {
 
                         match MasterKeyGen::new(seed).generate() {
                             Ok(extended_sk) => {
-                                let fut = set_key(extended_sk.secret_key)
-                                    .join(persist_extended_sk(extended_sk))
-                                    .map(|_| ());
+                                let fut =
+                                    persist_extended_sk(extended_sk.clone()).map(|_| extended_sk);
 
                                 Box::new(fut)
                             }
@@ -99,7 +106,7 @@ impl Actor for SignatureManager {
                     },
                     |extended_secret_key| {
                         let extended_sk: ExtendedSK = extended_secret_key.into();
-                        let fut = set_key(extended_sk.secret_key);
+                        let fut = futures::future::ok(extended_sk);
 
                         Box::new(fut)
                     },
@@ -107,6 +114,9 @@ impl Actor for SignatureManager {
             })
             .map_err(|e| log::error!("Couldn't initialize Signature Manager: {}", e))
             .into_actor(self)
+            .map(|ext_key, act, _| {
+                act.set_key(ext_key.secret_key);
+            })
             .wait(ctx);
     }
 }
@@ -127,10 +137,7 @@ impl Handler<SetKey> for SignatureManager {
     type Result = <SetKey as Message>::Result;
 
     fn handle(&mut self, SetKey(secret_key): SetKey, _ctx: &mut Self::Context) -> Self::Result {
-        let public_key = PK::from_secret_key(&SignContext::signing_only(), &secret_key);
-        self.keypair = Some((secret_key, public_key));
-
-        log::info!("Signature Manager received a key and is ready to sign");
+        self.set_key(secret_key);
 
         Ok(())
     }
