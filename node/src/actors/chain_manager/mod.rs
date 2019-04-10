@@ -47,7 +47,8 @@ use crate::storage_mngr;
 use witnet_data_structures::{
     chain::{
         Block, ChainState, CheckpointBeacon, DataRequestReport, Epoch, Hash, Hashable,
-        InventoryItem, Output, OutputPointer, Transaction, TransactionsPool, UnspentOutputsPool,
+        InventoryItem, Output, OutputPointer, PublicKeyHash, Transaction, TransactionsPool,
+        UnspentOutputsPool,
     },
     data_request::DataRequestPool,
     serializers::decoders::TryFrom,
@@ -118,7 +119,7 @@ pub struct ChainManager {
     /// Map that stores candidate blocks for further validation and consolidation as tip of the blockchain
     candidates: HashMap<Hash, Block>,
     /// Our public key hash, used to create the mint transaction
-    own_pkh: Option<Hash>,
+    own_pkh: Option<PublicKeyHash>,
 }
 
 /// Required trait for being able to retrieve ChainManager address from registry
