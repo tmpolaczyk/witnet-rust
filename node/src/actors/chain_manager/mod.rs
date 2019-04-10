@@ -25,7 +25,7 @@
 //! * Updating the UTXO set with valid transactions that have already been anchored into a valid block. This includes:
 //!     - Removing the UTXOs that the transaction spends as inputs.
 //!     - Adding a new UTXO for every output in the transaction.
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use actix::prelude::*;
 use actix::{
@@ -289,6 +289,11 @@ impl ChainManager {
                 // Update TransactionPool
                 update_transaction_pool(&mut self.transactions_pool, block.txns.as_ref());
 
+                // Update OwnUtxos
+                if let Some(own_pkh) = self.own_pkh {
+                    update_own_utxos(&mut self.chain_state.own_utxos, own_pkh, &block.txns);
+                }
+
                 // Update DataRequestPool
                 self.chain_state.data_request_pool = dr_pool;
                 let reveals = self
@@ -341,6 +346,36 @@ impl ChainManager {
 fn update_transaction_pool(transactions_pool: &mut TransactionsPool, transactions: &[Transaction]) {
     for transaction in transactions {
         transactions_pool.remove(&transaction.hash());
+    }
+}
+
+fn update_own_utxos(
+    own_utxos: &mut HashSet<OutputPointer>,
+    own_pkh: PublicKeyHash,
+    transactions: &[Transaction],
+) {
+    for transaction in transactions {
+        // Remove spent inputs
+        for input in &transaction.body.inputs {
+            own_utxos.remove(&input.output_pointer());
+        }
+        // Insert new outputs
+        for (i, output) in transaction.body.outputs.iter().enumerate() {
+            match output {
+                Output::ValueTransfer(x) => {
+                    if x.pkh == own_pkh {
+                        own_utxos.insert(OutputPointer {
+                            transaction_id: transaction.hash(),
+                            output_index: i as u32,
+                        });
+                    }
+                }
+                Output::DataRequest(_) => {}
+                Output::Commit(_) => {}
+                Output::Reveal(_) => {}
+                Output::Tally(_) => {}
+            }
+        }
     }
 }
 
