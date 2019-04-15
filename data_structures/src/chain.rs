@@ -438,6 +438,7 @@ pub struct TransactionBody {
     pub inputs: Vec<Input>,
     pub outputs: Vec<Output>,
     #[protobuf_convert(skip)]
+    #[serde(skip)]
     hash: Cell<Option<Hash>>,
 }
 
