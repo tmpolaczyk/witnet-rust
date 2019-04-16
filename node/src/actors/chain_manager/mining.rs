@@ -77,7 +77,7 @@ impl ChainManager {
             // (we must wait for all the potential nodes to sent their transactions)
             // The best way would be to start mining a few seconds _before_ the epoch
             // checkpoint, but for simplicity we just wait for 5 seconds after the checkpoint
-            ctx.run_later(Duration::from_secs(5), move |act, ctx| {
+            ctx.run_later(Duration::from_secs(10), move |act, ctx| {
                 info!(
                     "{} Discovered eligibility for mining a block for epoch #{}",
                     Yellow.bold().paint("[Mining]"),
@@ -261,11 +261,9 @@ impl ChainManager {
                     let tally_body =
                         create_tally_body(&dr_output, inputs, outputs, consensus.clone());
 
-                    signature_mngr::sign(&tally_body)
+                    sign_transaction(tally_body)
                         .map_err(|e| log::error!("Couldn't sign tally body: {}", e))
-                        .and_then(move |sig| {
-                            let tally_transaction = Transaction::new(tally_body, vec![sig]);
-
+                        .and_then(move |tally_transaction| {
                             let print_results: Vec<_> = results
                                 .into_iter()
                                 .map(|result| RadonTypes::try_from(result.as_slice()))
