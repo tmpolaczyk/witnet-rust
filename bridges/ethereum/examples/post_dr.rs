@@ -1,19 +1,12 @@
-use async_jsonrpc_client::{futures::Stream, DuplexTransport, Transport};
 use log::*;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
-use std::{net::SocketAddr, path::Path, sync::Arc, time};
-use web3::types::{BlockId, U256};
+use std::{net::SocketAddr, path::Path, sync::Arc};
+use web3::types::U256;
 use web3::{
     contract,
     contract::Contract,
     futures::{future, Future},
-    types::FilterBuilder,
     types::H160,
-};
-use witnet_data_structures::{
-    chain::{Block, Hash, Hashable},
-    proto::ProtobufConvert,
 };
 
 #[derive(Serialize, Deserialize)]

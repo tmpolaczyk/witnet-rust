@@ -127,8 +127,7 @@ fn eth_event_stream(
                 // bridge having 100% cpu usage...
                 .stream(time::Duration::from_secs(1))
                 .map_err(|e| error!("ethereum event error = {:?}", e))
-                .then(move |value| {
-                    let value = value.unwrap();
+                .map(move |value| {
                     let tx3 = tx.clone();
                     debug!("Got ethereum event: {:?}", value);
                     let fut: Box<dyn Future<Item = (), Error = ()> + Send> = match &value.topics[0]
@@ -252,7 +251,7 @@ fn eth_event_stream(
                         }
                     };
 
-                    fut
+                    tokio::spawn(fut);
                 })
                 .for_each(|_| Ok(()))
         })
@@ -405,19 +404,19 @@ fn main_actor(
                         let drtx_hash: U256 = match dr.hash() {
                             Hash::SHA256(x) => x.into(),
                         };
-                        contract
-                            .call(
-                                "report_dr_inclusion",
-                                (dr_id, poi, drtx_hash),
-                                accounts[0],
-                                contract::Options::default(),
-                            )
-                            .then(|tx| {
-                                debug!("report_dr_inclusion tx: {:?}", tx);
-                                Result::<(), ()>::Ok(())
-                            })
-                            .wait()
-                            .unwrap();
+                        tokio::spawn(
+                            contract
+                                .call(
+                                    "report_dr_inclusion",
+                                    (dr_id, poi, drtx_hash),
+                                    accounts[0],
+                                    contract::Options::default(),
+                                )
+                                .then(|tx| {
+                                    debug!("report_dr_inclusion tx: {:?}", tx);
+                                    Result::<(), ()>::Ok(())
+                                }),
+                        );
                     }
                 }
 
@@ -437,19 +436,19 @@ fn main_actor(
                         //let poi = dr_inclusion_proof.lemma;
                         let poi: Bytes = vec![];
                         let result: Bytes = tally.tally.clone();
-                        contract
-                            .call(
-                                "report_result",
-                                (dr_id, poi, block_hash, result),
-                                accounts[0],
-                                contract::Options::default(),
-                            )
-                            .then(|tx| {
-                                debug!("report_result tx: {:?}", tx);
-                                Result::<(), ()>::Ok(())
-                            })
-                            .wait()
-                            .unwrap();
+                        tokio::spawn(
+                            contract
+                                .call(
+                                    "report_result",
+                                    (dr_id, poi, block_hash, result),
+                                    accounts[0],
+                                    contract::Options::default(),
+                                )
+                                .then(|tx| {
+                                    debug!("report_result tx: {:?}", tx);
+                                    Result::<(), ()>::Ok(())
+                                }),
+                        );
                     }
                 }
             }
