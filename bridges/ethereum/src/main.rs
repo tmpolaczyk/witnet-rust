@@ -1,23 +1,21 @@
 use async_jsonrpc_client::{futures::Stream, DuplexTransport, Transport};
+use bimap::BiMap;
 use ethabi::{Bytes, Token};
 use futures::sink::Sink;
 use log::*;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::collections::HashMap;
 use std::{net::SocketAddr, path::Path, sync::Arc, time};
 use tokio::sync::mpsc;
-use web3::types::U256;
 use web3::{
     contract,
     contract::Contract,
     futures::{future, Future},
-    types::FilterBuilder,
-    types::H160,
+    types::U256,
+    types::{FilterBuilder, H160},
 };
-use witnet_data_structures::chain::DataRequestOutput;
 use witnet_data_structures::{
-    chain::{Block, Hash, Hashable},
+    chain::{Block, DataRequestOutput, Hash, Hashable},
     proto::ProtobufConvert,
 };
 
@@ -59,6 +57,7 @@ fn eth_event_stream(
 
     let accounts = web3.eth().accounts().wait().unwrap();
     debug!("Web3 accounts: {:?}", accounts);
+    let account0 = accounts[0];
 
     // Why read files at runtime when you can read files at compile time
     let contract_abi_json: &[u8] = include_bytes!("../wbi_abi.json");
@@ -118,6 +117,7 @@ fn eth_event_stream(
 
     web3.eth_filter()
         .create_logs_filter(post_dr_filter)
+        .map_err(|e| error!("Failed to create logs filter: {}", e))
         .then(move |filter| {
             // TODO: for some reason, this is never executed
             let filter = filter.unwrap();
@@ -126,10 +126,13 @@ fn eth_event_stream(
                 // This poll interval was set to 0 in the example, which resulted in the
                 // bridge having 100% cpu usage...
                 .stream(time::Duration::from_secs(1))
-                .map(move |value| {
+                .map_err(|e| error!("ethereum event error = {:?}", e))
+                .then(move |value| {
+                    let value = value.unwrap();
                     let tx3 = tx.clone();
                     debug!("Got ethereum event: {:?}", value);
-                    match &value.topics[0] {
+                    let fut: Box<dyn Future<Item = (), Error = ()> + Send> = match &value.topics[0]
+                    {
                         x if x == &post_dr_event_sig => {
                             debug!("PostDrEvent types: {:?}", post_dr_event.inputs);
                             let event_types = vec![ethabi::ParamType::Uint(0)];
@@ -139,57 +142,120 @@ fn eth_event_stream(
                             info!("New posted data request, id: {}", dr_id);
                             // Get data request info
                             let dr_id = match dr_id {
-                                Token::Uint(x) => x.clone(),
+                                Token::Uint(x) => *x,
                                 _ => panic!("Wrong type"),
                             };
-                            let dr_bytes: Bytes = contract
-                                .query(
-                                    "read_dr",
-                                    (dr_id,),
-                                    accounts[0],
-                                    contract::Options::default(),
-                                    None,
-                                )
-                                .wait()
-                                .unwrap();
 
-                            let dr_string = String::from_utf8_lossy(&dr_bytes);
-                            debug!("{}", dr_string);
+                            let contract = contract.clone();
+                            Box::new(
+                                contract
+                                    .query(
+                                        "read_dr",
+                                        (dr_id,),
+                                        account0,
+                                        contract::Options::default(),
+                                        None,
+                                    )
+                                    .then(move |res| {
+                                        let dr_bytes: Bytes = res.unwrap();
+                                        //let dr_string = String::from_utf8_lossy(&dr_bytes);
+                                        //debug!("{}", dr_string);
 
-                            // Claim dr
-                            let poe: Bytes = vec![];
-                            info!("Claiming dr {}", dr_id);
-                            let call_future = contract
-                                .call(
-                                    "claim_drs",
-                                    (vec![dr_id], poe),
-                                    accounts[0],
-                                    contract::Options::default(),
-                                )
-                                .then(|tx| {
-                                    debug!("claim_drs tx: {:?}", tx);
-                                    Result::<(), ()>::Ok(())
-                                })
-                                .wait()
-                                .unwrap();
-                            let dr_output = serde_json::from_str(&dr_string).unwrap();
-                            // Assuming claim is successful
-                            // Post dr in witnet
-                            tx3.send(ActorMessage::PostDr(dr_output, dr_id))
-                                .wait()
-                                .unwrap();
+                                        // Claim dr
+                                        let poe: Bytes = vec![];
+                                        info!("Claiming dr {}", dr_id);
+
+                                        contract
+                                            .call(
+                                                "claim_drs",
+                                                (vec![dr_id], poe),
+                                                account0,
+                                                contract::Options::default(),
+                                            )
+                                            .then(|tx| {
+                                                debug!("claim_drs tx: {:?}", tx);
+                                                Result::<(), ()>::Ok(())
+                                            })
+                                            .then(move |_| {
+                                                let dr_output = serde_json::from_str(
+                                                    &String::from_utf8_lossy(&dr_bytes),
+                                                )
+                                                .unwrap();
+                                                // Assuming claim is successful
+                                                // Post dr in witnet
+                                                tx3.send(ActorMessage::PostDr(dr_id, dr_output))
+                                                    .map(|_| ())
+                                                    .map_err(|_| ())
+                                            })
+                                    }),
+                            )
                         }
-                        x if x == &inclusion_dr_event_sig => {}
-                        x if x == &post_tally_event_sig => {}
+                        x if x == &inclusion_dr_event_sig => {
+                            debug!(
+                                "InclusionDataRequest types: {:?}",
+                                inclusion_dr_event.inputs
+                            );
+                            let event_types = vec![ethabi::ParamType::Uint(0)];
+                            let event_data = ethabi::decode(&event_types, &value.data.0);
+                            debug!("Event data: {:?}", event_data);
+                            let dr_id = &event_data.unwrap()[0];
+                            // Get data request info
+                            let dr_id = match dr_id {
+                                Token::Uint(x) => *x,
+                                _ => panic!("Wrong type"),
+                            };
+
+                            debug!("Reading dr_tx_hash for id {}", dr_id);
+                            Box::new(
+                                contract
+                                    .query(
+                                        "read_dr_hash",
+                                        (dr_id,),
+                                        accounts[0],
+                                        contract::Options::default(),
+                                        None,
+                                    )
+                                    .then(move |res: Result<U256, _>| {
+                                        let dr_tx_hash = res.unwrap();
+                                        let dr_tx_hash = Hash::SHA256(dr_tx_hash.into());
+                                        info!(
+                                            "New included data request, id: {} with dr_tx_hash: {}",
+                                            dr_id, dr_tx_hash
+                                        );
+                                        tx3.send(ActorMessage::WaitForTally(dr_id, dr_tx_hash))
+                                            .map(|_| ())
+                                            .map_err(|_| ())
+                                    }),
+                            )
+                        }
+                        x if x == &post_tally_event_sig => {
+                            debug!("PostResult types: {:?}", inclusion_dr_event.inputs);
+                            let event_types = vec![ethabi::ParamType::Uint(0)];
+                            let event_data = ethabi::decode(&event_types, &value.data.0);
+                            debug!("Event data: {:?}", event_data);
+                            let dr_id = &event_data.unwrap()[0];
+                            // Get data request info
+                            let dr_id = match dr_id {
+                                Token::Uint(x) => *x,
+                                _ => panic!("Wrong type"),
+                            };
+
+                            info!("Data request with id: {} has been resolved!", dr_id);
+                            Box::new(
+                                tx3.send(ActorMessage::TallyClaimed(dr_id))
+                                    .map(|_| ())
+                                    .map_err(|_| ()),
+                            )
+                        }
                         _ => {
-                            error!("Received unknown ethereum event");
+                            panic!("Received unknown ethereum event");
                         }
-                    }
+                    };
+
+                    fut
                 })
-                .map_err(|e| error!("ethereum event error = {:?}", e))
                 .for_each(|_| Ok(()))
         })
-        .map_err(|_| ())
 
     /*
     web3.eth_filter().create_blocks_filter().then(|filter| {
@@ -233,17 +299,16 @@ fn witnet_block_stream(
 
     let fut = witnet_client
         .subscribe(&witnet_subscription_id.into())
-        .map(move |value| {
+        .map_err(|e| error!("witnet notification error = {:?}", e))
+        .then(move |value| {
+            let value = value.unwrap();
             let tx1 = tx.clone();
             // TODO: get current epoch to distinguish between old blocks that are sent
             // to us while synchronizing and new blocks
             let block = serde_json::from_value::<Block>(value).unwrap();
             debug!("Got witnet block: {:?}", block);
-            tx1.send(ActorMessage::NewWitnetBlock(block))
-                .wait()
-                .unwrap()
+            tx1.send(ActorMessage::NewWitnetBlock(Box::new(block)))
         })
-        .map_err(|e| error!("witnet notification error = {:?}", e))
         .for_each(|_| Ok(()))
         .then(|_| Ok(()));
 
@@ -265,8 +330,10 @@ fn init_logger() {
 }
 
 enum ActorMessage {
-    PostDr(DataRequestOutput, U256),
-    NewWitnetBlock(Block),
+    PostDr(U256, DataRequestOutput),
+    WaitForTally(U256, Hash),
+    TallyClaimed(U256),
+    NewWitnetBlock(Box<Block>),
 }
 
 fn main_actor(
@@ -274,7 +341,8 @@ fn main_actor(
     web3: &mut web3::Web3<web3::transports::Http>,
     rx: mpsc::Receiver<ActorMessage>,
 ) -> impl Future<Item = (), Error = ()> {
-    let mut claimed_drs = HashMap::new();
+    let mut claimed_drs = BiMap::new();
+    let mut waiting_for_tally = BiMap::new();
 
     let accounts = web3.eth().accounts().wait().unwrap();
     debug!("Web3 accounts: {:?}", accounts);
@@ -295,20 +363,28 @@ fn main_actor(
         // Force moving handle to closure to avoid drop
         let _ = &handle;
         match value {
-            ActorMessage::PostDr(dr_output, dr_id) => {
+            ActorMessage::PostDr(dr_id, dr_output) => {
                 let bdr_params = json!({"dro": dr_output, "fee": 0});
                 let bdr_res = witnet_client.execute("buildDataRequest", bdr_params).wait();
                 // TODO: this method should return the transaction hash,
                 // so we can identify the transaction later in the block
                 debug!("buildDataRequest: {:?}", bdr_res);
-                claimed_drs.insert(dr_output.hash(), dr_id);
+                claimed_drs.insert(dr_id, dr_output.hash());
+            }
+            ActorMessage::WaitForTally(dr_id, dr_tx_hash) => {
+                claimed_drs.remove_by_left(&dr_id);
+                waiting_for_tally.insert(dr_id, dr_tx_hash);
+            }
+            ActorMessage::TallyClaimed(dr_id) => {
+                waiting_for_tally.remove_by_left(&dr_id);
             }
             ActorMessage::NewWitnetBlock(block) => {
                 let block_hash: U256 = match block.hash() {
                     Hash::SHA256(x) => x.into(),
                 };
                 for dr in &block.txns.data_request_txns {
-                    if let Some(dr_id) = claimed_drs.remove(&dr.body.dr_output.hash()) {
+                    if let Some((dr_id, _)) = claimed_drs.remove_by_right(&dr.body.dr_output.hash())
+                    {
                         let dr_inclusion_proof = dr.data_proof_of_inclusion(&block).unwrap();
                         debug!(
                             "Proof of inclusion for data request {}:\nData: {:?}\n{:?}",
@@ -321,10 +397,18 @@ fn main_actor(
 
                         //let poi = dr_inclusion_proof.lemma;
                         let poi: Bytes = vec![];
-                        let call_future = contract
+                        // TODO: since the poi is not implemented, we have no way to get
+                        // the dr transaction hash later on, for the tally.
+                        // So we send the dr transaction hash as the block hash, which
+                        // under the current implementation of the WBI will be stored as
+                        // dr_hash
+                        let drtx_hash: U256 = match dr.hash() {
+                            Hash::SHA256(x) => x.into(),
+                        };
+                        contract
                             .call(
                                 "report_dr_inclusion",
-                                (dr_id, poi, block_hash),
+                                (dr_id, poi, drtx_hash),
                                 accounts[0],
                                 contract::Options::default(),
                             )
@@ -338,16 +422,35 @@ fn main_actor(
                 }
 
                 for tally in &block.txns.tally_txns {
-                    // TODO: for each tally, check if it was submitted in the bridge
-                    // and call report_result method of the WBI
-                    let tally_inclusion_proof = tally.data_proof_of_inclusion(&block).unwrap();
-                    let Hash::SHA256(dr_pointer_bytes) = tally.dr_pointer;
-                    debug!(
-                        "Proof of inclusion for tally        {}:\nData: {:?}\n{:?}",
-                        tally.hash(),
-                        [&dr_pointer_bytes[..], &tally.tally].concat(),
-                        tally_inclusion_proof
-                    );
+                    if let Some((dr_id, _)) = waiting_for_tally.remove_by_right(&tally.dr_pointer) {
+                        // Call report_result method of the WBI
+                        let tally_inclusion_proof = tally.data_proof_of_inclusion(&block).unwrap();
+                        let Hash::SHA256(dr_pointer_bytes) = tally.dr_pointer;
+                        debug!(
+                            "Proof of inclusion for tally        {}:\nData: {:?}\n{:?}",
+                            tally.hash(),
+                            [&dr_pointer_bytes[..], &tally.tally].concat(),
+                            tally_inclusion_proof
+                        );
+
+                        // Call report_result
+                        //let poi = dr_inclusion_proof.lemma;
+                        let poi: Bytes = vec![];
+                        let result: Bytes = tally.tally.clone();
+                        contract
+                            .call(
+                                "report_result",
+                                (dr_id, poi, block_hash, result),
+                                accounts[0],
+                                contract::Options::default(),
+                            )
+                            .then(|tx| {
+                                debug!("report_result tx: {:?}", tx);
+                                Result::<(), ()>::Ok(())
+                            })
+                            .wait()
+                            .unwrap();
+                    }
                 }
             }
         }

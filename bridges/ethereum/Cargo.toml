@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 async-jsonrpc-client = { git = "https://github.com/witnet/async-jsonrpc-client", features = ["tcp"] }
+bimap = "0.3.1"
 env_logger = "0.6.1"
 ethabi = "7.0"
 futures = "0.1.28"

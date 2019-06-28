@@ -182,6 +182,14 @@
           "type": "uint256"
         },
         {
+          "name": "poi",
+          "type": "bytes"
+        },
+        {
+          "name": "block_hash",
+          "type": "uint256"
+        },
+        {
           "name": "result",
           "type": "bytes"
         }
@@ -205,6 +213,25 @@
         {
           "name": "",
           "type": "bytes"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "id",
+          "type": "uint256"
+        }
+      ],
+      "name": "read_dr_hash",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
         }
       ],
       "payable": false,
