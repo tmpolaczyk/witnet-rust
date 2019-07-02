@@ -354,12 +354,12 @@ fn main_actor(
     let wbi_contract = Contract::new(web3.eth(), wbi_contract_address, wbi_contract_abi.clone());
 
     let block_relay_contract_abi_json: &[u8] = include_bytes!("../block_relay_abi.json");
-    let block_relay_contract_abi = ethabi::Contract::load(wbi_contract_abi_json).unwrap();
+    let block_relay_contract_abi = ethabi::Contract::load(block_relay_contract_abi_json).unwrap();
     let block_relay_contract_address = config.block_relay_contract_addr;
     let block_relay_contract = Contract::new(
         web3.eth(),
         block_relay_contract_address,
-        wbi_contract_abi.clone(),
+        block_relay_contract_abi.clone(),
     );
 
     let witnet_addr = config.witnet_jsonrpc_addr.to_string();
@@ -395,8 +395,8 @@ fn main_actor(
                 // Enable block relay
                 let enable_block_relay = true;
                 if enable_block_relay {
-                    let dr_merkle_root: U256 = match block.block_header.merkle_roots.dr_hash_merkle_root
-                        {
+                    let dr_merkle_root: U256 =
+                        match block.block_header.merkle_roots.dr_hash_merkle_root {
                             Hash::SHA256(x) => x.into(),
                         };
                     let tally_merkle_root: U256 =
@@ -404,15 +404,33 @@ fn main_actor(
                             Hash::SHA256(x) => x.into(),
                         };
                     // Post witnet block to BlockRelay wbi_contract
-                    tokio::spawn(block_relay_contract.call(
-                        "postNewBlock",
-                        (block_hash, dr_merkle_root, tally_merkle_root),
+                    block_relay_contract
+                        .call(
+                            "postNewBlock",
+                            (block_hash, dr_merkle_root, tally_merkle_root),
+                            accounts[0],
+                            contract::Options::default(),
+                        )
+                        .then(|tx| {
+                            debug!("postNewBlock: {:?}", tx);
+                            Result::<(), ()>::Ok(())
+                        })
+                        .wait()
+                        .unwrap();
+
+                    /*
+                    // Verify that the block was posted correctly
+                    block_relay_contract.query(
+                        "readDrMerkleRoot",
+                        (block_hash,),
                         accounts[0],
                         contract::Options::default(),
-                    ).then(|tx| {
-                        debug!("postNewBlock: {:?}", tx);
+                        None,
+                    ).then(|tx: Result<U256, _>| {
+                        debug!("readDrMerkleRoot: {:?}", tx);
                         Result::<(), ()>::Ok(())
-                    }));
+                    }).wait().unwrap();
+                    */
                 }
                 // The futures executed after this point should be executed *after* the
                 // postNewBlock transaction has been confirmed
@@ -444,7 +462,7 @@ fn main_actor(
                             wbi_contract
                                 .call(
                                     "reportDataRequestInclusion",
-                                    (dr_id, poi, drtx_hash),
+                                    (dr_id, poi, block_hash, drtx_hash),
                                     accounts[0],
                                     contract::Options::default(),
                                 )

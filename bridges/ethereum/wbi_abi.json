@@ -177,6 +177,10 @@
         {
           "name": "_blockHash",
           "type": "uint256"
+        },
+        {
+          "name": "_drTxHash",
+          "type": "uint256"
         }
       ],
       "name": "reportDataRequestInclusion",
