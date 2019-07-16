@@ -41,13 +41,15 @@ fn eth_event_stream(
     let data_request_bytes = data_request_output.to_pb_bytes().unwrap();
 
     wbi_contract
-        .call(
+        .call_raw(
             "postDataRequest",
             (data_request_bytes, tally_value),
             config.eth_account,
+            config.eth_account_private_key,
             contract::Options::with(|opt| {
                 opt.value = Some(U256::from_dec_str("250000000000000000").unwrap());
                 opt.gas = Some(1_000_000.into());
+                opt.gas_price = Some(20_000_000_000_u64.into());
             }),
         )
         .map(|tx| {

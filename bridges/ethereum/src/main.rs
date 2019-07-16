@@ -59,7 +59,7 @@ fn eth_event_stream(
             "Account does not exists: {}\nAvailable accounts:\n{:#?}",
             config.eth_account, accounts
         );
-        process::exit(1);
+        //process::exit(1);
     }
 
     let contract_address = config.wbi_contract_addr;
@@ -325,10 +325,11 @@ fn post_actor(
                             info!("[{}] Claiming dr", dr_id);
 
                             let fut = wbi_contract
-                                .call_with_confirmations(
+                                .call_with_confirmations_raw(
                                     "claimDataRequests",
                                     (vec![dr_id], poe),
                                     config.eth_account,
+                                    config.eth_account_private_key,
                                     contract::Options::default(),
                                     1,
                                 )
@@ -420,10 +421,11 @@ fn main_actor(
                         // Post witnet block to BlockRelay wbi_contract
                         let fut: Box<dyn Future<Item = Box<Block>, Error = ()> + Send> = Box::new(
                             block_relay_contract
-                                .call_with_confirmations(
+                                .call_with_confirmations_raw(
                                     "postNewBlock",
                                     (block_hash, dr_merkle_root, tally_merkle_root),
                                     config.eth_account,
+                                    config.eth_account_private_key,
                                     contract::Options::default(),
                                     1,
                                 )
@@ -483,12 +485,14 @@ fn main_actor(
                                     })
                                     .collect();
                                 let poi_index = U256::from(dr_inclusion_proof.index);
+
                                 tokio::spawn(
                                     wbi_contract
-                                        .call_with_confirmations(
+                                        .call_with_confirmations_raw(
                                             "reportDataRequestInclusion",
                                             (dr_id, poi, poi_index, block_hash),
                                             config.eth_account,
+                                            config.eth_account_private_key,
                                             contract::Options::default(),
                                             1,
                                         )
@@ -527,12 +531,14 @@ fn main_actor(
                                     .collect();
                                 let poi_index = U256::from(tally_inclusion_proof.index);
                                 let result: Bytes = tally.tally.clone();
+
                                 tokio::spawn(
                                     wbi_contract
-                                        .call_with_confirmations(
+                                        .call_with_confirmations_raw(
                                             "reportResult",
                                             (dr_id, poi, poi_index, block_hash, result),
                                             config.eth_account,
+                                            config.eth_account_private_key,
                                             contract::Options::default(),
                                             1,
                                         )

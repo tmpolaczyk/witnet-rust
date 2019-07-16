@@ -4,7 +4,7 @@ use log::*;
 use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
 use std::path::Path;
-use web3::types::H160;
+use web3::types::{H160, H256};
 
 /// Configuration
 #[derive(Serialize, Deserialize)]
@@ -20,6 +20,8 @@ pub struct Config {
     pub block_relay_contract_addr: H160,
     /// Ethereum account used to create the transactions
     pub eth_account: H160,
+    /// Private key of the ethereum account
+    pub eth_account_private_key: H256,
     /// Enable block relay from witnet to ethereum?
     pub enable_block_relay: bool,
 }
