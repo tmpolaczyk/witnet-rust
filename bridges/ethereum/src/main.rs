@@ -207,6 +207,8 @@ fn eth_event_stream(
 
                     fut
                 })
+                // Without this line the stream will stop on the first failure
+                .then(|_| Ok(()))
                 .for_each(|_| Ok(()))
         })
 }
@@ -596,6 +598,8 @@ fn post_actor(
                                 })
                                 .map(|_| ())
                         })
+                        // Without this line the stream will stop on the first failure
+                        .then(|_| Ok(()))
                 }
             }
         }),
@@ -800,6 +804,8 @@ fn main_actor(
 
                         Result::<(), ()>::Ok(())
                     })
+                    // Without this line the actor will panic on the first failure
+                    .then(|_| Result::<(), ()>::Ok(()))
                     .wait()
                     .unwrap();
                 }
