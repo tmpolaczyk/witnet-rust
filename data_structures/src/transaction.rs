@@ -47,7 +47,7 @@ impl MemoHash {
 
 /// Transaction data structure
 #[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize, ProtobufConvert)]
-#[protobuf_convert(pb = "witnet::Transaction")]
+#[protobuf_convert(source = "witnet::Transaction")]
 // FIXME(#649): Remove clippy skip error
 #[allow(clippy::large_enum_variant)]
 pub enum Transaction {
@@ -80,7 +80,7 @@ pub fn mint(tx: &Transaction) -> Option<&MintTransaction> {
 }
 
 #[derive(Debug, Default, Eq, PartialEq, Clone, Serialize, Deserialize, ProtobufConvert)]
-#[protobuf_convert(pb = "witnet::VTTransaction")]
+#[protobuf_convert(source = "witnet::VTTransaction")]
 pub struct VTTransaction {
     pub body: VTTransactionBody,
     pub signatures: Vec<KeyedSignature>,
@@ -99,7 +99,7 @@ impl VTTransaction {
 }
 
 #[derive(Debug, Default, Eq, PartialEq, Clone, Serialize, Deserialize, ProtobufConvert)]
-#[protobuf_convert(pb = "witnet::VTTransactionBody")]
+#[protobuf_convert(source = "witnet::VTTransactionBody")]
 pub struct VTTransactionBody {
     pub inputs: Vec<Input>,
     pub outputs: Vec<ValueTransferOutput>,
@@ -156,7 +156,7 @@ impl TxInclusionProof {
 }
 
 #[derive(Debug, Default, Eq, PartialEq, Clone, Serialize, Deserialize, ProtobufConvert)]
-#[protobuf_convert(pb = "witnet::DRTransaction")]
+#[protobuf_convert(source = "witnet::DRTransaction")]
 pub struct DRTransaction {
     pub body: DRTransactionBody,
     pub signatures: Vec<KeyedSignature>,
@@ -192,7 +192,7 @@ impl DRTransaction {
 }
 
 #[derive(Debug, Default, Eq, PartialEq, Clone, Serialize, Deserialize, ProtobufConvert)]
-#[protobuf_convert(pb = "witnet::DRTransactionBody")]
+#[protobuf_convert(source = "witnet::DRTransactionBody")]
 pub struct DRTransactionBody {
     pub inputs: Vec<Input>,
     pub outputs: Vec<ValueTransferOutput>,
@@ -231,7 +231,7 @@ impl DRTransactionBody {
 }
 
 #[derive(Debug, Default, Eq, PartialEq, Clone, Serialize, Deserialize, ProtobufConvert)]
-#[protobuf_convert(pb = "witnet::CommitTransaction")]
+#[protobuf_convert(source = "witnet::CommitTransaction")]
 pub struct CommitTransaction {
     pub body: CommitTransactionBody,
     pub signatures: Vec<KeyedSignature>,
@@ -245,7 +245,7 @@ impl CommitTransaction {
 }
 
 #[derive(Debug, Default, Eq, PartialEq, Clone, Serialize, Deserialize, ProtobufConvert)]
-#[protobuf_convert(pb = "witnet::CommitTransactionBody")]
+#[protobuf_convert(source = "witnet::CommitTransactionBody")]
 pub struct CommitTransactionBody {
     // Inputs
     // TODO: Discussion about collateral
@@ -275,7 +275,7 @@ impl CommitTransactionBody {
 }
 
 #[derive(Debug, Default, Eq, PartialEq, Clone, Serialize, Deserialize, ProtobufConvert)]
-#[protobuf_convert(pb = "witnet::RevealTransaction")]
+#[protobuf_convert(source = "witnet::RevealTransaction")]
 pub struct RevealTransaction {
     pub body: RevealTransactionBody,
     pub signatures: Vec<KeyedSignature>,
@@ -289,7 +289,7 @@ impl RevealTransaction {
 }
 
 #[derive(Debug, Default, Eq, PartialEq, Clone, Serialize, Deserialize, ProtobufConvert)]
-#[protobuf_convert(pb = "witnet::RevealTransactionBody")]
+#[protobuf_convert(source = "witnet::RevealTransactionBody")]
 pub struct RevealTransactionBody {
     // Inputs
     pub dr_pointer: Hash, // DTTransaction hash
@@ -315,7 +315,7 @@ impl RevealTransactionBody {
 }
 
 #[derive(Debug, Default, Eq, PartialEq, Clone, Serialize, Deserialize, ProtobufConvert)]
-#[protobuf_convert(pb = "witnet::TallyTransaction")]
+#[protobuf_convert(source = "witnet::TallyTransaction")]
 pub struct TallyTransaction {
     // Inputs
     pub dr_pointer: Hash, // DTTransaction hash
@@ -377,7 +377,7 @@ impl TallyTransaction {
 }
 
 #[derive(Debug, Default, Eq, PartialEq, Clone, Serialize, Deserialize, ProtobufConvert)]
-#[protobuf_convert(pb = "witnet::MintTransaction")]
+#[protobuf_convert(source = "witnet::MintTransaction")]
 pub struct MintTransaction {
     pub epoch: Epoch,
     pub output: ValueTransferOutput,

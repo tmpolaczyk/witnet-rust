@@ -28,7 +28,7 @@ impl VrfCtx {
 /// A VRF Proof is a unique, deterministic way to sign a message with a public key.
 /// It is used to prevent one identity from creating multiple different proofs of eligibility.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, ProtobufConvert)]
-#[protobuf_convert(pb = "witnet::VrfProof")]
+#[protobuf_convert(source = "witnet::VrfProof")]
 pub struct VrfProof {
     proof: Vec<u8>,
     public_key: PublicKey,
@@ -106,7 +106,7 @@ impl VrfMessage {
 
 /// Block mining eligibility claim
 #[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize, ProtobufConvert, Default)]
-#[protobuf_convert(pb = "witnet::Block_BlockEligibilityClaim")]
+#[protobuf_convert(source = "witnet::Block_BlockEligibilityClaim")]
 pub struct BlockEligibilityClaim {
     /// A Verifiable Random Function proof of the eligibility for a given epoch and public key
     pub proof: VrfProof,
@@ -144,7 +144,7 @@ impl BlockEligibilityClaim {
 
 /// Structure used to serialize the parameters needed for the `DataRequestEligibilityClaim`
 #[derive(Debug, ProtobufConvert)]
-#[protobuf_convert(pb = "witnet::DataRequestVrfMessage")]
+#[protobuf_convert(source = "witnet::DataRequestVrfMessage")]
 struct DataRequestVrfMessage {
     beacon: CheckpointBeacon,
     dr_hash: Hash,
@@ -152,7 +152,7 @@ struct DataRequestVrfMessage {
 
 /// Data request eligibility claim
 #[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize, ProtobufConvert, Default)]
-#[protobuf_convert(pb = "witnet::DataRequestEligibilityClaim")]
+#[protobuf_convert(source = "witnet::DataRequestEligibilityClaim")]
 pub struct DataRequestEligibilityClaim {
     /// A Verifiable Random Function proof of the eligibility for a given epoch, public key and data request
     pub proof: VrfProof,
