@@ -23,7 +23,7 @@ use crate::{
             BuildDrt, BuildVtt, EpochNotification, GetBalance, GetBlocksEpochRange,
             GetDataRequestReport, GetHighestCheckpointBeacon, GetMemoryTransaction, GetReputation,
             GetReputationAll, GetReputationStatus, GetReputationStatusResult, GetState,
-            PeersBeacons, SendLastBeacon, SessionUnitResult, StoreInventoryItem, TryMineBlock,
+            PeersBeacons, SendLastBeacon, SessionUnitResult, TryMineBlock,
         },
         sessions_manager::SessionsManager,
     },
@@ -400,33 +400,55 @@ impl Handler<PeersBeacons> for ChainManager {
                         // Review candidates
                         let consensus_block_hash = consensus_beacon.hash_prev_block;
                         // TODO: Be functional my friend
-                        if let Some(consensus_block) = self.candidates.remove(&consensus_block_hash)
-                        {
-                            match self.process_requested_block(ctx, &consensus_block) {
-                                Ok(()) => {
+                        // TODO: if consensus_beacon.hash_prev_block points to our top block
+                        if let Some(block_candidate) = self.candidates.get(&consensus_block_hash) {
+                            let our_top_block_hash =
+                                self.chain_state.chain_info.as_ref().map(|chain_info| {
+                                    chain_info.highest_block_checkpoint.hash_prev_block
+                                });
+                            if our_top_block_hash
+                                == Some(block_candidate.block_header.beacon.hash_prev_block)
+                            {
+                                self.consolidate_best_candidate(ctx);
+                                let other_beacon = self
+                                    .chain_state
+                                    .chain_info
+                                    .as_ref()
+                                    .unwrap()
+                                    .highest_block_checkpoint;
+                                if other_beacon == consensus_beacon {
                                     log::info!("Consolidate consensus candidate. Synced state");
                                     log::info!("{}", SYNCED_BANNER);
-                                    self.persist_items(
-                                        ctx,
-                                        vec![StoreInventoryItem::Block(Box::new(
-                                            consensus_block.clone(),
-                                        ))],
-                                    );
                                     StateMachine::Synced
-                                }
-                                Err(e) => {
-                                    log::debug!("Failed to consolidate consensus candidate: {}", e);
+                                } else {
+                                    // TODO: fork
+                                    log::warn!(
+                                        "Consolidated a different candidate than most of our peers"
+                                    );
+                                    // Fork case
+                                    log::warn!(
+                                        "[CONSENSUS]: We are on {:?} but the network is on {:?}",
+                                        other_beacon,
+                                        consensus_beacon
+                                    );
 
-                                    // Send Anycast<SendLastBeacon> to a safu peer in order to begin the synchronization
-                                    SessionsManager::from_registry().do_send(Anycast {
-                                        command: SendLastBeacon { beacon: our_beacon },
-                                        safu: true,
-                                    });
+                                    self.initialize_from_storage(ctx);
+                                    log::info!("Restored chain state from storage");
 
-                                    StateMachine::Synchronizing
+                                    StateMachine::WaitingConsensus
                                 }
+                            } else {
+                                // We don't want to consolidate the candidate yet
+                                // Send Anycast<SendLastBeacon> to a safu peer in order to begin the synchronization
+                                SessionsManager::from_registry().do_send(Anycast {
+                                    command: SendLastBeacon { beacon: our_beacon },
+                                    safu: true,
+                                });
+
+                                StateMachine::Synchronizing
                             }
                         } else {
+                            // We don't have the candidate, nothing to do
                             // Send Anycast<SendLastBeacon> to a safu peer in order to begin the synchronization
                             SessionsManager::from_registry().do_send(Anycast {
                                 command: SendLastBeacon { beacon: our_beacon },
