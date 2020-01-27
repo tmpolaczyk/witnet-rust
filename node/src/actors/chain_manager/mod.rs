@@ -26,6 +26,7 @@
 //!     - Removing the UTXOs that the transaction spends as inputs.
 //!     - Adding a new UTXO for every output in the transaction.
 use std::{
+    cmp::Ordering,
     collections::{HashMap, HashSet},
     convert::TryFrom,
     time::Duration,
@@ -56,7 +57,7 @@ use witnet_data_structures::{
 use witnet_rad::types::RadonTypes;
 use witnet_util::timestamp::seconds_to_human_string;
 use witnet_validations::validations::{
-    validate_block, validate_candidate, validate_new_transaction, Diff,
+    compare_blocks, validate_block, validate_candidate, validate_new_transaction, Diff,
 };
 
 use crate::{
@@ -64,7 +65,8 @@ use crate::{
         inventory_manager::InventoryManager,
         json_rpc::JsonRpcServer,
         messages::{
-            AddItems, AddTransaction, Broadcast, NewBlock, SendInventoryItem, StoreInventoryItem,
+            AddItems, AddTransaction, Broadcast, NewBlock, SendInventoryItem, SendLastBeacon,
+            StoreInventoryItem,
         },
         sessions_manager::SessionsManager,
         storage_keys,
@@ -457,6 +459,108 @@ impl ChainManager {
             }
             _ => {
                 error!("No ChainInfo loaded in ChainManager");
+            }
+        }
+    }
+
+    fn consolidate_best_candidate(&mut self, ctx: &mut Context<Self>) {
+        let current_epoch = self.current_epoch.unwrap();
+        match self.chain_state {
+            ChainState {
+                chain_info: Some(ref mut chain_info),
+                reputation_engine: Some(ref mut rep_engine),
+                ..
+            } => {
+                if self.epoch_constants.is_none() || self.vrf_ctx.is_none() || self.secp.is_none() {
+                    log::error!("{}", ChainManagerError::ChainNotReady);
+                    return;
+                }
+                // Decide the best candidate
+                // TODO: replace for loop with a try_fold
+                let mut chosen_candidate = None;
+                for (key, block_candidate) in self.candidates.drain() {
+                    let block_pkh = &block_candidate.block_sig.public_key.pkh();
+                    let reputation = rep_engine.trs.get(block_pkh);
+
+                    if let Some((chosen_key, chosen_reputation, _, _)) = chosen_candidate {
+                        if compare_blocks(key, reputation, chosen_key, chosen_reputation)
+                            != Ordering::Greater
+                        {
+                            // Ignore in case that reputation would be lower
+                            // than previously chosen candidate or would be
+                            // equal but with highest hash
+                            continue;
+                        }
+                    }
+                    match validate_block(
+                        &block_candidate,
+                        current_epoch,
+                        chain_info.highest_block_checkpoint,
+                        &self.chain_state.unspent_outputs_pool,
+                        &self.chain_state.data_request_pool,
+                        self.vrf_ctx.as_mut().unwrap(),
+                        rep_engine,
+                        self.epoch_constants.unwrap(),
+                        self.secp.as_ref().unwrap(),
+                    ) {
+                        Ok(utxo_diff) => {
+                            let block_pkh = &block_candidate.block_sig.public_key.pkh();
+                            let reputation = rep_engine.trs.get(block_pkh);
+                            chosen_candidate = Some((key, reputation, block_candidate, utxo_diff))
+                        }
+                        Err(e) => log::debug!("{}", e),
+                    }
+                }
+
+                // Consolidate the best candidate
+                if let Some((_, _, block, utxo_diff)) = chosen_candidate {
+                    // Persist block and update ChainState
+                    self.consolidate_block(ctx, &block, utxo_diff);
+                } else {
+                    let previous_epoch = current_epoch - 1;
+                    log::warn!(
+                        "There was no valid block candidate to consolidate for epoch {}",
+                        previous_epoch
+                    );
+
+                    // Update ActiveReputationSet in case of epochs without blocks
+                    if let Err(e) = rep_engine.ars.update(vec![], previous_epoch) {
+                        log::error!("Error updating empty reputation with no blocks: {}", e);
+                    }
+                }
+
+                // Send last beacon in state 3 on block consolidation
+                SessionsManager::from_registry().do_send(Broadcast {
+                    command: SendLastBeacon {
+                        beacon: self
+                            .chain_state
+                            .chain_info
+                            .as_ref()
+                            .unwrap()
+                            .highest_block_checkpoint,
+                    },
+                    only_inbound: true,
+                });
+
+                // TODO: Review time since commits are clear and new ones are received before to mining
+                // Remove commits because they expire every epoch
+                self.transactions_pool.clear_commits();
+
+                // Mining
+                if self.mining_enabled {
+                    // Block mining is now triggered by SessionsManager on peers beacon timeout
+                    // Data request mining MUST finish BEFORE the block has been mined!!!!
+                    // The transactions must be included into this block, both the transactions from
+                    // our node and the transactions from other nodes
+                    self.try_mine_data_request(ctx);
+                }
+
+                // Clear candidates
+                self.candidates.clear();
+            }
+
+            _ => {
+                log::error!("No ChainInfo loaded in ChainManager");
             }
         }
     }
