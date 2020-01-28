@@ -23,14 +23,13 @@ use witnet_data_structures::{
 use witnet_rad::{error::RadError, types::serial_iter_decode};
 use witnet_validations::validations::{
     block_reward, calculate_randpoe_threshold, calculate_reppoe_threshold, dr_transaction_fee,
-    merkle_tree_root, update_utxo_diff, vt_transaction_fee, UtxoDiff,
+    merkle_tree_root, update_utxo_diff, validate_block, validate_block_transactions,
+    vt_transaction_fee, UtxoDiff,
 };
 
 use crate::{
     actors::{
-        chain_manager::{
-            process_validations, transaction_factory::sign_transaction, ChainManager, StateMachine,
-        },
+        chain_manager::{transaction_factory::sign_transaction, ChainManager, StateMachine},
         messages::{
             AddCandidates, AddCommitReveal, GetHighestCheckpointBeacon, ResolveRA, RunTally,
         },
@@ -162,40 +161,48 @@ impl ChainManager {
                     })
                     .into_actor(act)
             })
-            .and_then(move |block, act, ctx| {
-                match process_validations(
+            .and_then(move |block, act, _ctx| {
+                let mut signatures_to_verify = vec![];
+                futures::future::result(validate_block(
                     &block,
                     current_epoch,
                     beacon,
+                    &mut signatures_to_verify,
                     act.chain_state.reputation_engine.as_ref().unwrap(),
-                    act.epoch_constants.unwrap(),
-                    &act.chain_state.unspent_outputs_pool,
-                    &act.chain_state.data_request_pool,
-                    // The unwrap is safe because if there is no VRF context,
-                    // the actor should have stopped execution
-                    act.vrf_ctx.as_mut().unwrap(),
-                    act.secp.as_ref().unwrap(),
-                ) {
-                    Ok(_) => {
-                        // Send AddCandidates message to self
-                        // This will run all the validations again
+                ))
+                .and_then(|()| signature_mngr::verify_signatures(signatures_to_verify))
+                .into_actor(act)
+                .and_then(move |(), act, _ctx| {
+                    let mut signatures_to_verify = vec![];
+                    futures::future::result(validate_block_transactions(
+                        &act.chain_state.unspent_outputs_pool,
+                        &act.chain_state.data_request_pool,
+                        &block,
+                        &mut signatures_to_verify,
+                        act.chain_state.reputation_engine.as_ref().unwrap(),
+                        epoch_constants,
+                    ))
+                    .and_then(|_diff| signature_mngr::verify_signatures(signatures_to_verify))
+                    .map(|diff| (block, diff))
+                    .into_actor(act)
+                })
+                .map(|(block, _diff), act, ctx| {
+                    // Send AddCandidates message to self
+                    // This will run all the validations again
 
-                        let block_hash = block.hash();
-                        log::info!(
-                            "Proposed block candidate {}",
-                            Yellow.bold().paint(block_hash.to_string())
-                        );
-                        act.handle(
-                            AddCandidates {
-                                blocks: vec![block],
-                            },
-                            ctx,
-                        );
-                    }
-
-                    Err(e) => error!("Error trying to mine a block: {}", e),
-                }
-                actix::fut::ok(())
+                    let block_hash = block.hash();
+                    log::info!(
+                        "Proposed block candidate {}",
+                        Yellow.bold().paint(block_hash.to_string())
+                    );
+                    act.handle(
+                        AddCandidates {
+                            blocks: vec![block],
+                        },
+                        ctx,
+                    );
+                })
+                .map_err(|e, _, _| error!("TODO: {}", e))
             })
             .wait(ctx);
     }
