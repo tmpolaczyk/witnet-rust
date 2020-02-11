@@ -960,7 +960,7 @@ fn update_reputation(
     for (pkh, rep) in rep_eng
         .trs
         .identities()
-        .sorted_by(|a, b| a.0.to_string().cmp(&b.0.to_string()))
+        .sorted_by_key(|&(_, &r)| std::cmp::Reverse(r))
     {
         let active = if rep_eng.ars.contains(pkh) { 'A' } else { ' ' };
         log::log!(log_level, "    [{}] {}: {}", active, pkh, rep.0);

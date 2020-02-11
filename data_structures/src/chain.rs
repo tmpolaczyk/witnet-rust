@@ -36,6 +36,7 @@ use crate::{
     vrf::{BlockEligibilityClaim, DataRequestEligibilityClaim},
 };
 use bech32::{FromBase32, ToBase32};
+use itertools::Itertools;
 
 pub trait Hashable {
     fn hash(&self) -> Hash;
@@ -1856,6 +1857,51 @@ impl ReputationEngine {
             ars: ActiveReputationSet::new(activity_period),
         }
     }
+
+    /// Return a factor to increase the threshold dynamically
+    pub fn threshold_factor(&self, n: u16) -> u32 {
+        let total_active_reputation = self.trs.get_sum(self.ars.active_identities());
+        let num_active_identities = self.ars.active_identities_number() as u32;
+        let total_active_rep =
+            u64::from(total_active_reputation.0) + u64::from(num_active_identities);
+        internal_threshold_factor(
+            n as u64,
+            total_active_rep,
+            self.ars
+                .active_identities()
+                .map(|pkh| self.trs.get(pkh).0 + 1)
+                .sorted_by_key(|&r| std::cmp::Reverse(r)),
+        )
+    }
+}
+
+/// Recursive function for the threshold_factor function
+fn internal_threshold_factor<I>(mut n: u64, total_rep: u64, rep_sorted: I) -> u32
+where
+    I: Iterator<Item = u32>,
+{
+    if n == 0 {
+        return 0;
+    }
+
+    let mut remaining_rep = total_rep;
+
+    for top_rep in rep_sorted {
+        if (u64::from(top_rep) * n) > remaining_rep {
+            n -= 1;
+            remaining_rep -= u64::from(top_rep);
+        } else {
+            let factor = if (total_rep % remaining_rep) > 0 {
+                ((total_rep / remaining_rep) + 1) * n
+            } else {
+                (total_rep / remaining_rep) * n
+            };
+
+            return u32::try_from(factor).unwrap_or(u32::max_value());
+        }
+    }
+
+    u32::max_value()
 }
 
 /// Witnessing Acts Counter
@@ -2570,5 +2616,185 @@ mod tests {
         assert_eq!(reveals_vec.len(), 1);
         assert_eq!(transactions_pool.re_transactions, HashMap::new());
         assert_eq!(transactions_pool.re_hash_index, HashMap::new());
+    }
+
+    #[test]
+    fn rep_threshold_zero() {
+        let rep_engine = ReputationEngine::new(1000);
+
+        assert_eq!(rep_engine.threshold_factor(1), u32::max_value());
+    }
+
+    #[test]
+    fn rep_threshold_1() {
+        let mut rep_engine = ReputationEngine::new(1000);
+        let id1 = PublicKeyHash { hash: [1; 20] };
+
+        rep_engine
+            .trs
+            .gain(Alpha(10), vec![(id1, Reputation(99))])
+            .unwrap();
+        rep_engine.ars.push_activity(vec![id1]);
+
+        assert_eq!(rep_engine.threshold_factor(1), 1);
+    }
+
+    #[test]
+    fn rep_threshold_2() {
+        let mut rep_engine = ReputationEngine::new(1000);
+        let id1 = PublicKeyHash { hash: [1; 20] };
+        let id2 = PublicKeyHash { hash: [2; 20] };
+
+        rep_engine
+            .trs
+            .gain(Alpha(10), vec![(id1, Reputation(99))])
+            .unwrap();
+        rep_engine.ars.push_activity(vec![id1]);
+
+        rep_engine
+            .trs
+            .gain(Alpha(10), vec![(id2, Reputation(49))])
+            .unwrap();
+        rep_engine.ars.push_activity(vec![id2]);
+
+        assert_eq!(rep_engine.threshold_factor(1), 1);
+        assert_eq!(rep_engine.threshold_factor(2), 3);
+    }
+
+    #[test]
+    fn rep_threshold_2_inverse() {
+        let mut rep_engine = ReputationEngine::new(1000);
+        let id1 = PublicKeyHash { hash: [1; 20] };
+        let id2 = PublicKeyHash { hash: [2; 20] };
+
+        rep_engine
+            .trs
+            .gain(Alpha(10), vec![(id1, Reputation(49))])
+            .unwrap();
+        rep_engine.ars.push_activity(vec![id1]);
+
+        rep_engine
+            .trs
+            .gain(Alpha(10), vec![(id2, Reputation(99))])
+            .unwrap();
+        rep_engine.ars.push_activity(vec![id2]);
+
+        assert_eq!(rep_engine.threshold_factor(1), 1);
+        assert_eq!(rep_engine.threshold_factor(2), 3);
+    }
+
+    #[test]
+    fn rep_threshold_2_sum() {
+        let mut rep_engine = ReputationEngine::new(1000);
+        let id1 = PublicKeyHash { hash: [1; 20] };
+        let id2 = PublicKeyHash { hash: [2; 20] };
+
+        rep_engine
+            .trs
+            .gain(Alpha(10), vec![(id1, Reputation(49))])
+            .unwrap();
+        rep_engine.ars.push_activity(vec![id1]);
+
+        rep_engine
+            .trs
+            .gain(Alpha(10), vec![(id2, Reputation(99))])
+            .unwrap();
+        rep_engine.ars.push_activity(vec![id2]);
+
+        rep_engine
+            .trs
+            .gain(Alpha(10), vec![(id1, Reputation(200))])
+            .unwrap();
+
+        assert_eq!(rep_engine.threshold_factor(1), 1);
+        assert_eq!(rep_engine.threshold_factor(2), 4);
+    }
+
+    #[test]
+    fn rep_threshold_2_more_than_actives() {
+        let mut rep_engine = ReputationEngine::new(1000);
+        let id1 = PublicKeyHash { hash: [1; 20] };
+        let id2 = PublicKeyHash { hash: [2; 20] };
+
+        rep_engine
+            .trs
+            .gain(Alpha(10), vec![(id1, Reputation(49))])
+            .unwrap();
+        rep_engine.ars.push_activity(vec![id1]);
+
+        rep_engine
+            .trs
+            .gain(Alpha(10), vec![(id2, Reputation(99))])
+            .unwrap();
+        rep_engine.ars.push_activity(vec![id2]);
+
+        assert_eq!(rep_engine.threshold_factor(10), u32::max_value());
+    }
+
+    #[test]
+    fn rep_threshold_2_zero_requested() {
+        let mut rep_engine = ReputationEngine::new(1000);
+        let id1 = PublicKeyHash { hash: [1; 20] };
+        let id2 = PublicKeyHash { hash: [2; 20] };
+
+        rep_engine
+            .trs
+            .gain(Alpha(10), vec![(id1, Reputation(49))])
+            .unwrap();
+        rep_engine.ars.push_activity(vec![id1]);
+
+        rep_engine
+            .trs
+            .gain(Alpha(10), vec![(id2, Reputation(99))])
+            .unwrap();
+        rep_engine.ars.push_activity(vec![id2]);
+
+        assert_eq!(rep_engine.threshold_factor(0), 0);
+    }
+
+    #[test]
+    fn rep_threshold_specific_example() {
+        let mut rep_engine = ReputationEngine::new(1000);
+        let mut ids = vec![];
+        for i in 0..8 {
+            ids.push(PublicKeyHash::from_bytes(&[i; 20]).unwrap());
+        }
+        rep_engine.ars.push_activity(ids.clone());
+
+        rep_engine
+            .trs
+            .gain(Alpha(10), vec![(ids[0], Reputation(79))])
+            .unwrap();
+        rep_engine
+            .trs
+            .gain(Alpha(10), vec![(ids[1], Reputation(9))])
+            .unwrap();
+        rep_engine
+            .trs
+            .gain(Alpha(10), vec![(ids[2], Reputation(1))])
+            .unwrap();
+        rep_engine
+            .trs
+            .gain(Alpha(10), vec![(ids[3], Reputation(1))])
+            .unwrap();
+        rep_engine
+            .trs
+            .gain(Alpha(10), vec![(ids[4], Reputation(1))])
+            .unwrap();
+        rep_engine
+            .trs
+            .gain(Alpha(10), vec![(ids[5], Reputation(1))])
+            .unwrap();
+
+        assert_eq!(rep_engine.threshold_factor(0), 0);
+        assert_eq!(rep_engine.threshold_factor(1), 1);
+        assert_eq!(rep_engine.threshold_factor(2), 5);
+        assert_eq!(rep_engine.threshold_factor(3), 10);
+        assert_eq!(rep_engine.threshold_factor(4), 20);
+        assert_eq!(rep_engine.threshold_factor(5), 30);
+        assert_eq!(rep_engine.threshold_factor(6), 40);
+        assert_eq!(rep_engine.threshold_factor(7), 50);
+        assert_eq!(rep_engine.threshold_factor(8), 100);
+        assert_eq!(rep_engine.threshold_factor(9), u32::max_value());
     }
 }
