@@ -658,7 +658,7 @@ pub fn validate_commit_transaction(
 
     let pkh = co_tx.body.proof.proof.pkh();
     let num_witnesses = dr_output.witnesses + dr_output.backup_witnesses;
-    let (target_hash, _) = calculate_reppoe_threshold(rep_eng, &pkh, num_witnesses);
+    let (target_hash, _) = calculate_reppoe_threshold(rep_eng, &pkh, &dr_state.pkh, num_witnesses);
     add_dr_vrf_signature_to_verify(
         signatures_to_verify,
         &co_tx.body.proof,
@@ -1387,6 +1387,7 @@ pub fn calculate_randpoe_threshold(total_identities: u32, replication_factor: u3
 pub fn calculate_reppoe_threshold(
     rep_eng: &ReputationEngine,
     pkh: &PublicKeyHash,
+    dr_pkh: &PublicKeyHash,
     num_witnesses: u16,
 ) -> (Hash, f64) {
     let my_reputation = rep_eng.trs.get(pkh);
@@ -1397,7 +1398,7 @@ pub fn calculate_reppoe_threshold(
     // Add 1 to reputation because otherwise a node with 0 reputation would
     // never be eligible for a data request
     let my_reputation = u64::from(my_reputation.0) + 1;
-    let factor = u64::from(rep_eng.threshold_factor(num_witnesses));
+    let factor = u64::from(rep_eng.threshold_factor(num_witnesses, dr_pkh));
 
     let max = u64::max_value();
     // Check for overflow: when the probability is more than 100%, cap it to 100%
@@ -2060,6 +2061,7 @@ mod tests {
     #[test]
     fn target_reppoe() {
         let mut rep_engine = ReputationEngine::new(1000);
+        let dr_pkh = PublicKeyHash::from_bytes(&[0x0a; 20]).unwrap();
         let id1 = PublicKeyHash::from_bytes(&[1; 20]).unwrap();
         rep_engine
             .trs
@@ -2068,7 +2070,7 @@ mod tests {
         rep_engine.ars.push_activity(vec![id1]);
 
         // 100% when we have all the reputation
-        let (t00, p00) = calculate_reppoe_threshold(&rep_engine, &id1, 1);
+        let (t00, p00) = calculate_reppoe_threshold(&rep_engine, &id1, &dr_pkh, 1);
         assert_eq!(t00, Hash::with_first_u32(0xFFFF_FFFF));
         assert_eq!(p00.round() as i128, 100);
 
@@ -2080,7 +2082,7 @@ mod tests {
         rep_engine.ars.push_activity(vec![id2]);
 
         // 50% when there are 2 nodes with 50% of the reputation each
-        let (t01, p01) = calculate_reppoe_threshold(&rep_engine, &id1, 1);
+        let (t01, p01) = calculate_reppoe_threshold(&rep_engine, &id1, &dr_pkh, 1);
         // Since the calculate_reppoe function first divides and later
         // multiplies, we get a rounding error here
         assert_eq!(t01, Hash::with_first_u32(0x7FFF_FFFF));
@@ -2091,6 +2093,7 @@ mod tests {
     #[allow(clippy::cognitive_complexity)]
     fn target_reppoe_specific_example() {
         let mut rep_engine = ReputationEngine::new(1000);
+        let dr_pkh = PublicKeyHash::from_bytes(&[0x0a; 20]).unwrap();
         let mut ids = vec![];
         for i in 0..8 {
             ids.push(PublicKeyHash::from_bytes(&[i; 20]).unwrap());
@@ -2122,89 +2125,89 @@ mod tests {
             .gain(Alpha(10), vec![(ids[5], Reputation(1))])
             .unwrap();
 
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[0], 1);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[0], &dr_pkh, 1);
         assert_eq!(p00.round() as i128, 80);
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[1], 1);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[1], &dr_pkh, 1);
         assert_eq!(p00.round() as i128, 10);
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[2], 1);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[2], &dr_pkh, 1);
         assert_eq!(p00.round() as i128, 2);
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[3], 1);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[3], &dr_pkh, 1);
         assert_eq!(p00.round() as i128, 2);
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[4], 1);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[4], &dr_pkh, 1);
         assert_eq!(p00.round() as i128, 2);
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[5], 1);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[5], &dr_pkh, 1);
         assert_eq!(p00.round() as i128, 2);
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[6], 1);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[6], &dr_pkh, 1);
         assert_eq!(p00.round() as i128, 1);
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[7], 1);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[7], &dr_pkh, 1);
         assert_eq!(p00.round() as i128, 1);
 
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[0], 2);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[0], &dr_pkh, 2);
         assert_eq!(p00.round() as i128, 100);
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[1], 2);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[1], &dr_pkh, 2);
         assert_eq!(p00.round() as i128, 50);
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[2], 2);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[2], &dr_pkh, 2);
         assert_eq!(p00.round() as i128, 10);
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[3], 2);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[3], &dr_pkh, 2);
         assert_eq!(p00.round() as i128, 10);
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[4], 2);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[4], &dr_pkh, 2);
         assert_eq!(p00.round() as i128, 10);
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[5], 2);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[5], &dr_pkh, 2);
         assert_eq!(p00.round() as i128, 10);
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[6], 2);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[6], &dr_pkh, 2);
         assert_eq!(p00.round() as i128, 5);
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[7], 2);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[7], &dr_pkh, 2);
         assert_eq!(p00.round() as i128, 5);
 
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[0], 3);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[0], &dr_pkh, 3);
         assert_eq!(p00.round() as i128, 100);
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[1], 3);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[1], &dr_pkh, 3);
         assert_eq!(p00.round() as i128, 100);
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[2], 3);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[2], &dr_pkh, 3);
         assert_eq!(p00.round() as i128, 20);
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[3], 3);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[3], &dr_pkh, 3);
         assert_eq!(p00.round() as i128, 20);
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[4], 3);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[4], &dr_pkh, 3);
         assert_eq!(p00.round() as i128, 20);
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[5], 3);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[5], &dr_pkh, 3);
         assert_eq!(p00.round() as i128, 20);
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[6], 3);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[6], &dr_pkh, 3);
         assert_eq!(p00.round() as i128, 10);
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[7], 3);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[7], &dr_pkh, 3);
         assert_eq!(p00.round() as i128, 10);
 
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[0], 4);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[0], &dr_pkh, 4);
         assert_eq!(p00.round() as i128, 100);
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[1], 4);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[1], &dr_pkh, 4);
         assert_eq!(p00.round() as i128, 100);
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[2], 4);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[2], &dr_pkh, 4);
         assert_eq!(p00.round() as i128, 40);
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[3], 4);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[3], &dr_pkh, 4);
         assert_eq!(p00.round() as i128, 40);
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[4], 4);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[4], &dr_pkh, 4);
         assert_eq!(p00.round() as i128, 40);
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[5], 4);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[5], &dr_pkh, 4);
         assert_eq!(p00.round() as i128, 40);
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[6], 4);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[6], &dr_pkh, 4);
         assert_eq!(p00.round() as i128, 20);
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[7], 4);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[7], &dr_pkh, 4);
         assert_eq!(p00.round() as i128, 20);
 
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[0], 5);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[0], &dr_pkh, 5);
         assert_eq!(p00.round() as i128, 100);
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[1], 5);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[1], &dr_pkh, 5);
         assert_eq!(p00.round() as i128, 100);
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[2], 5);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[2], &dr_pkh, 5);
         assert_eq!(p00.round() as i128, 60);
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[3], 5);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[3], &dr_pkh, 5);
         assert_eq!(p00.round() as i128, 60);
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[4], 5);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[4], &dr_pkh, 5);
         assert_eq!(p00.round() as i128, 60);
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[5], 5);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[5], &dr_pkh, 5);
         assert_eq!(p00.round() as i128, 60);
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[6], 5);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[6], &dr_pkh, 5);
         assert_eq!(p00.round() as i128, 30);
-        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[7], 5);
+        let (_, p00) = calculate_reppoe_threshold(&rep_engine, &ids[7], &dr_pkh, 5);
         assert_eq!(p00.round() as i128, 30);
     }
 
@@ -2212,19 +2215,20 @@ mod tests {
     fn target_reppoe_zero_reputation() {
         // Test the behavior of the algorithm when our node has 0 reputation
         let mut rep_engine = ReputationEngine::new(1000);
+        let dr_pkh = PublicKeyHash::from_bytes(&[0x0a; 20]).unwrap();
         let id0 = PublicKeyHash::from_bytes(&[0; 20]).unwrap();
 
         // 100% when the total reputation is 0
-        let (t00, p00) = calculate_reppoe_threshold(&rep_engine, &id0, 1);
+        let (t00, p00) = calculate_reppoe_threshold(&rep_engine, &id0, &dr_pkh, 1);
         assert_eq!(t00, Hash::with_first_u32(0xFFFF_FFFF));
         assert_eq!(p00.round() as i128, 100);
-        let (t01, p01) = calculate_reppoe_threshold(&rep_engine, &id0, 100);
+        let (t01, p01) = calculate_reppoe_threshold(&rep_engine, &id0, &dr_pkh, 100);
         assert_eq!(t01, Hash::with_first_u32(0xFFFF_FFFF));
         assert_eq!(p01.round() as i128, 100);
 
         let id1 = PublicKeyHash::from_bytes(&[1; 20]).unwrap();
         rep_engine.ars.push_activity(vec![id1]);
-        let (t02, p02) = calculate_reppoe_threshold(&rep_engine, &id0, 1);
+        let (t02, p02) = calculate_reppoe_threshold(&rep_engine, &id0, &dr_pkh, 1);
         assert_eq!(t02, Hash::with_first_u32(0xFFFF_FFFF));
         assert_eq!(p02.round() as i128, 100);
 
@@ -2233,14 +2237,14 @@ mod tests {
             .trs
             .gain(Alpha(10), vec![(id1, Reputation(1))])
             .unwrap();
-        let (t03, p03) = calculate_reppoe_threshold(&rep_engine, &id0, 1);
+        let (t03, p03) = calculate_reppoe_threshold(&rep_engine, &id0, &dr_pkh, 1);
         assert_eq!(t03, Hash::with_first_u32(0x7FFF_FFFF));
         assert_eq!(p03.round() as i128, 50);
 
         // 33% when the total reputation is 1 but there are 2 active identities
         let id2 = PublicKeyHash::from_bytes(&[2; 20]).unwrap();
         rep_engine.ars.push_activity(vec![id2]);
-        let (t04, p04) = calculate_reppoe_threshold(&rep_engine, &id0, 1);
+        let (t04, p04) = calculate_reppoe_threshold(&rep_engine, &id0, &dr_pkh, 1);
         assert_eq!(t04, Hash::with_first_u32(0x5555_5555));
         assert_eq!(p04.round() as i128, 33);
 
@@ -2254,7 +2258,7 @@ mod tests {
             .trs
             .gain(Alpha(10), vec![(id1, Reputation(99))])
             .unwrap();
-        let (t05, p05) = calculate_reppoe_threshold(&rep_engine, &id0, 1);
+        let (t05, p05) = calculate_reppoe_threshold(&rep_engine, &id0, &dr_pkh, 1);
         assert_eq!(t05, Hash::with_first_u32(0x0253_C825));
         assert_eq!(p05.round() as i128, 1);
     }
@@ -2263,6 +2267,7 @@ mod tests {
     fn reppoe_overflow() {
         // Test the behavior of the algorithm when our node has 0 reputation
         let mut rep_engine = ReputationEngine::new(1000);
+        let dr_pkh = PublicKeyHash::from_bytes(&[0x0a; 20]).unwrap();
         let id0 = PublicKeyHash::from_bytes(&[0; 20]).unwrap();
         let id1 = PublicKeyHash::from_bytes(&[1; 20]).unwrap();
         rep_engine.ars.push_activity(vec![id0]);
@@ -2273,9 +2278,47 @@ mod tests {
             .unwrap();
 
         // Test big values that result in < 100%
-        let (t01, p01) = calculate_reppoe_threshold(&rep_engine, &id0, 1);
+        let (t01, p01) = calculate_reppoe_threshold(&rep_engine, &id0, &dr_pkh, 1);
         assert_eq!(t01, Hash::with_first_u32(0xFFFF_FFFE));
         assert_eq!(p01.round() as i128, 100);
+    }
+
+    #[test]
+    fn target_reppoe_ignoring_data_requester() {
+        let mut rep_engine = ReputationEngine::new(1000);
+        let dr_pkh = PublicKeyHash::from_bytes(&[0x0a; 20]).unwrap();
+        let id1 = PublicKeyHash::from_bytes(&[1; 20]).unwrap();
+
+        rep_engine
+            .trs
+            .gain(Alpha(10), vec![(dr_pkh, Reputation(99))])
+            .unwrap();
+        rep_engine.ars.push_activity(vec![dr_pkh]);
+
+        rep_engine
+            .trs
+            .gain(Alpha(10), vec![(id1, Reputation(49))])
+            .unwrap();
+        rep_engine.ars.push_activity(vec![id1]);
+
+        // 100% when we have all the reputation (ignoring data requester reputation)
+        let (t00, p00) = calculate_reppoe_threshold(&rep_engine, &id1, &dr_pkh, 1);
+        assert_eq!(t00, Hash::with_first_u32(0xFFFF_FFFF));
+        assert_eq!(p00.round() as i128, 100);
+
+        let id2 = PublicKeyHash::from_bytes(&[2; 20]).unwrap();
+        rep_engine
+            .trs
+            .gain(Alpha(10), vec![(id2, Reputation(49))])
+            .unwrap();
+        rep_engine.ars.push_activity(vec![id2]);
+
+        // 50% when there are 2 nodes with 50% of the reputation each (ignoring data requester reputation)
+        let (t01, p01) = calculate_reppoe_threshold(&rep_engine, &id1, &dr_pkh, 1);
+        // Since the calculate_reppoe function first divides and later
+        // multiplies, we get a rounding error here
+        assert_eq!(t01, Hash::with_first_u32(0x7FFF_FFFF));
+        assert_eq!(p01.round() as i128, 50);
     }
 
     #[test]

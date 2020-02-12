@@ -241,7 +241,7 @@ impl ChainManager {
             num_active_identities,
         );
 
-        for (dr_pointer, data_request_output) in dr_pointers.into_iter().filter_map(|dr_pointer| {
+        for (dr_pointer, dr_state) in dr_pointers.into_iter().filter_map(|dr_pointer| {
             // Filter data requests that are not in data_request_pool
             if let Some(dr_state) = self
                 .chain_state
@@ -253,22 +253,26 @@ impl ChainManager {
                     // Skip commits from the creator of the data request, as they cannot be included
                     None
                 } else {
-                    Some((dr_pointer, dr_state.data_request.clone()))
+                    Some((dr_pointer, dr_state.clone()))
                 }
             } else {
                 None
             }
         }) {
-            let num_witnesses = data_request_output.witnesses;
-            let num_backup_witnesses = data_request_output.backup_witnesses;
+            let num_witnesses = dr_state.data_request.witnesses;
+            let num_backup_witnesses = dr_state.data_request.backup_witnesses;
             // The beacon used to create and verify data requests must be set to the current epoch
             let dr_beacon = CheckpointBeacon {
                 checkpoint: current_epoch,
                 ..beacon
             };
 
-            let (target_hash, probability) =
-                calculate_reppoe_threshold(rep_eng, &own_pkh, num_witnesses + num_backup_witnesses);
+            let (target_hash, probability) = calculate_reppoe_threshold(
+                rep_eng,
+                &own_pkh,
+                &dr_state.pkh,
+                num_witnesses + num_backup_witnesses,
+            );
 
             signature_mngr::vrf_prove(VrfMessage::data_request(dr_beacon, dr_pointer))
                 .map_err(move |e| {
@@ -308,7 +312,7 @@ impl ChainManager {
                 })
                 .flatten()
                 .and_then(move |vrf_proof| {
-                    let rad_request = data_request_output.data_request.clone();
+                    let rad_request = dr_state.data_request.data_request.clone();
 
                     // Send ResolveRA message to RADManager
                     let rad_manager_addr = RadManager::from_registry();
