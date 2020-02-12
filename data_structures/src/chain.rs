@@ -1901,19 +1901,11 @@ impl ReputationEngine {
         // Mitigate case of Data Requester has a significant reputation
         // which affects to the dynamic threshold
         let dr_rep = self.trs.get(dr_pkh).0 + 1;
-        let mut n = witnesses_number;
-        if n > 0 && dr_rep > 1 {
-            if let Some(&last_rep) = self
-                .threshold_cache
-                .borrow_mut()
-                .sorted_active_rep(gen)
-                .get((witnesses_number - 1) as usize)
-            {
-                if last_rep <= dr_rep {
-                    n += 1;
-                }
-            }
-        }
+        let n = update_witnesses_number(
+            witnesses_number,
+            dr_rep,
+            self.threshold_cache.borrow_mut().sorted_active_rep(gen),
+        );
 
         self.threshold_cache.borrow_mut().threshold_factor(n, gen)
     }
@@ -1923,6 +1915,20 @@ impl ReputationEngine {
     fn invalidate_reputation_threshold_cache(&self) {
         self.threshold_cache.borrow_mut().invalidate()
     }
+}
+
+/// Mitigate case of Data Requester has a significant reputation
+fn update_witnesses_number(witnesses_number: u16, dr_rep: u32, sorted_rep: &[u32]) -> u16 {
+    let mut n = witnesses_number;
+    if n > 0 && dr_rep > 1 {
+        if let Some(&last_rep) = sorted_rep.get((witnesses_number - 1) as usize) {
+            if last_rep <= dr_rep && n < u16::max_value() {
+                n += 1;
+            }
+        }
+    }
+
+    n
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
