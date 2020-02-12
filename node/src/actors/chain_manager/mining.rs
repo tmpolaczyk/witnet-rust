@@ -80,7 +80,7 @@ impl ChainManager {
             .reputation_engine
             .as_ref()
             .unwrap()
-            .ars
+            .ars()
             .active_identities_number() as u32;
 
         let current_epoch = self.current_epoch.unwrap();
@@ -230,9 +230,9 @@ impl ChainManager {
             .get_dr_output_pointers_by_epoch(current_epoch);
 
         let rep_eng = self.chain_state.reputation_engine.as_ref().unwrap();
-        let my_reputation = rep_eng.trs.get(&own_pkh);
-        let total_active_reputation = rep_eng.trs.get_sum(rep_eng.ars.active_identities());
-        let num_active_identities = rep_eng.ars.active_identities_number() as u32;
+        let my_reputation = rep_eng.trs().get(&own_pkh);
+        let total_active_reputation = rep_eng.trs().get_sum(rep_eng.ars().active_identities());
+        let num_active_identities = rep_eng.ars().active_identities_number() as u32;
         log::debug!("{} data requests for this epoch", dr_pointers.len());
         log::debug!(
             "Reputation: {}, total: {}, active identities: {}",

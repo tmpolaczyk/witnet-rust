@@ -37,6 +37,7 @@ use crate::{
 };
 use bech32::{FromBase32, ToBase32};
 use itertools::Itertools;
+use std::cell::RefCell;
 
 pub trait Hashable {
     fn hash(&self) -> Hash;
@@ -1842,9 +1843,12 @@ pub struct ReputationEngine {
     /// Reputation to be split between honest identities in the next epoch
     pub extra_reputation: Reputation,
     /// Total Reputation Set
-    pub trs: TotalReputationSet<PublicKeyHash, Reputation, Alpha>,
+    trs: TotalReputationSet<PublicKeyHash, Reputation, Alpha>,
     /// Active Reputation Set
-    pub ars: ActiveReputationSet<PublicKeyHash>,
+    ars: ActiveReputationSet<PublicKeyHash>,
+    /// Cached results of self.threshold_factor
+    #[serde(skip)]
+    threshold_cache: RefCell<ReputationThresholdCache>,
 }
 
 impl ReputationEngine {
@@ -1855,36 +1859,127 @@ impl ReputationEngine {
             extra_reputation: Reputation(0),
             trs: TotalReputationSet::default(),
             ars: ActiveReputationSet::new(activity_period),
+            threshold_cache: RefCell::default(),
         }
+    }
+
+    pub fn trs(&self) -> &TotalReputationSet<PublicKeyHash, Reputation, Alpha> {
+        &self.trs
+    }
+    pub fn ars(&self) -> &ActiveReputationSet<PublicKeyHash> {
+        &self.ars
+    }
+    pub fn trs_mut(&mut self) -> &mut TotalReputationSet<PublicKeyHash, Reputation, Alpha> {
+        self.invalidate_reputation_threshold_cache();
+
+        &mut self.trs
+    }
+    pub fn ars_mut(&mut self) -> &mut ActiveReputationSet<PublicKeyHash> {
+        self.invalidate_reputation_threshold_cache();
+
+        &mut self.ars
     }
 
     /// Return a factor to increase the threshold dynamically
     pub fn threshold_factor(&self, witnesses_number: u16, dr_pkh: &PublicKeyHash) -> u32 {
-        let total_active_reputation = self.trs.get_sum(self.ars.active_identities());
-        let num_active_identities = self.ars.active_identities_number() as u32;
-        let total_active_rep =
-            u64::from(total_active_reputation.0) + u64::from(num_active_identities);
+        let gen = || {
+            let total_active_reputation = self.trs.get_sum(self.ars.active_identities());
+            let num_active_identities = self.ars.active_identities_number() as u32;
+            let total_active_rep =
+                u64::from(total_active_reputation.0) + u64::from(num_active_identities);
 
-        let rep_sorted: Vec<u32> = self
-            .ars
-            .active_identities()
-            .map(|pkh| self.trs.get(pkh).0 + 1)
-            .sorted_by_key(|&r| std::cmp::Reverse(r))
-            .collect();
+            let sorted_identities: Vec<u32> = self
+                .ars
+                .active_identities()
+                .map(|pkh| self.trs.get(pkh).0 + 1)
+                .sorted_by_key(|&r| std::cmp::Reverse(r))
+                .collect();
+
+            (total_active_rep, sorted_identities)
+        };
 
         // Mitigate case of Data Requester has a significant reputation
         // which affects to the dynamic threshold
         let dr_rep = self.trs.get(dr_pkh).0 + 1;
         let mut n = witnesses_number;
-        if n > 0 {
-            if let Some(&last_rep) = rep_sorted.get((witnesses_number - 1) as usize) {
+        if n > 0 && dr_rep > 1 {
+            if let Some(&last_rep) = self
+                .threshold_cache
+                .borrow_mut()
+                .sorted_active_rep(gen)
+                .get((witnesses_number - 1) as usize)
+            {
                 if last_rep <= dr_rep {
                     n += 1;
                 }
             }
         }
 
-        internal_threshold_factor(n as u64, total_active_rep, rep_sorted)
+        self.threshold_cache.borrow_mut().threshold_factor(n, gen)
+    }
+
+    /// Invalidate cached values of self.threshold_factor
+    /// Must be called after mutating self.ars or self.trs
+    fn invalidate_reputation_threshold_cache(&self) {
+        self.threshold_cache.borrow_mut().invalidate()
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+struct ReputationThresholdCache {
+    valid: bool,
+    total_active_rep: u64,
+    sorted_active_rep: Vec<u32>,
+    threshold: HashMap<u16, u32>,
+}
+
+impl ReputationThresholdCache {
+    fn initialize(&mut self, total_active_rep: u64, sorted_active_rep: Vec<u32>) {
+        self.threshold.clear();
+        self.total_active_rep = total_active_rep;
+        self.sorted_active_rep = sorted_active_rep;
+        self.valid = true;
+    }
+
+    fn invalidate(&mut self) {
+        self.valid = false;
+    }
+
+    fn threshold_factor<F>(&mut self, n: u16, gen: F) -> u32
+    where
+        F: Fn() -> (u64, Vec<u32>),
+    {
+        if !self.valid {
+            let (total_active_rep, sorted_active_rep) = gen();
+            self.initialize(total_active_rep, sorted_active_rep);
+        }
+
+        let Self {
+            total_active_rep,
+            sorted_active_rep,
+            threshold,
+            ..
+        } = self;
+
+        *threshold.entry(n).or_insert_with(|| {
+            internal_threshold_factor(
+                n as u64,
+                *total_active_rep,
+                sorted_active_rep.iter().copied(),
+            )
+        })
+    }
+
+    fn sorted_active_rep<F>(&mut self, gen: F) -> &[u32]
+    where
+        F: Fn() -> (u64, Vec<u32>),
+    {
+        if !self.valid {
+            let (total_active_rep, sorted_active_rep) = gen();
+            self.initialize(total_active_rep, sorted_active_rep);
+        }
+
+        &self.sorted_active_rep
     }
 }
 
@@ -2646,10 +2741,10 @@ mod tests {
         let id1 = PublicKeyHash { hash: [1; 20] };
 
         rep_engine
-            .trs
+            .trs_mut()
             .gain(Alpha(10), vec![(id1, Reputation(99))])
             .unwrap();
-        rep_engine.ars.push_activity(vec![id1]);
+        rep_engine.ars_mut().push_activity(vec![id1]);
 
         assert_eq!(rep_engine.threshold_factor(1, &dr_pkh), 1);
     }
@@ -2662,16 +2757,16 @@ mod tests {
         let id2 = PublicKeyHash { hash: [2; 20] };
 
         rep_engine
-            .trs
+            .trs_mut()
             .gain(Alpha(10), vec![(id1, Reputation(99))])
             .unwrap();
-        rep_engine.ars.push_activity(vec![id1]);
+        rep_engine.ars_mut().push_activity(vec![id1]);
 
         rep_engine
-            .trs
+            .trs_mut()
             .gain(Alpha(10), vec![(id2, Reputation(49))])
             .unwrap();
-        rep_engine.ars.push_activity(vec![id2]);
+        rep_engine.ars_mut().push_activity(vec![id2]);
 
         assert_eq!(rep_engine.threshold_factor(1, &dr_pkh), 1);
         assert_eq!(rep_engine.threshold_factor(2, &dr_pkh), 3);
@@ -2685,16 +2780,16 @@ mod tests {
         let id2 = PublicKeyHash { hash: [2; 20] };
 
         rep_engine
-            .trs
+            .trs_mut()
             .gain(Alpha(10), vec![(id1, Reputation(49))])
             .unwrap();
-        rep_engine.ars.push_activity(vec![id1]);
+        rep_engine.ars_mut().push_activity(vec![id1]);
 
         rep_engine
-            .trs
+            .trs_mut()
             .gain(Alpha(10), vec![(id2, Reputation(99))])
             .unwrap();
-        rep_engine.ars.push_activity(vec![id2]);
+        rep_engine.ars_mut().push_activity(vec![id2]);
 
         assert_eq!(rep_engine.threshold_factor(1, &dr_pkh), 1);
         assert_eq!(rep_engine.threshold_factor(2, &dr_pkh), 3);
@@ -2708,19 +2803,19 @@ mod tests {
         let id2 = PublicKeyHash { hash: [2; 20] };
 
         rep_engine
-            .trs
+            .trs_mut()
             .gain(Alpha(10), vec![(id1, Reputation(49))])
             .unwrap();
         rep_engine.ars.push_activity(vec![id1]);
 
         rep_engine
-            .trs
+            .trs_mut()
             .gain(Alpha(10), vec![(id2, Reputation(99))])
             .unwrap();
-        rep_engine.ars.push_activity(vec![id2]);
+        rep_engine.ars_mut().push_activity(vec![id2]);
 
         rep_engine
-            .trs
+            .trs_mut()
             .gain(Alpha(10), vec![(id1, Reputation(200))])
             .unwrap();
 
@@ -2736,16 +2831,16 @@ mod tests {
         let id2 = PublicKeyHash { hash: [2; 20] };
 
         rep_engine
-            .trs
+            .trs_mut()
             .gain(Alpha(10), vec![(id1, Reputation(49))])
             .unwrap();
-        rep_engine.ars.push_activity(vec![id1]);
+        rep_engine.ars_mut().push_activity(vec![id1]);
 
         rep_engine
-            .trs
+            .trs_mut()
             .gain(Alpha(10), vec![(id2, Reputation(99))])
             .unwrap();
-        rep_engine.ars.push_activity(vec![id2]);
+        rep_engine.ars_mut().push_activity(vec![id2]);
 
         assert_eq!(rep_engine.threshold_factor(10, &dr_pkh), u32::max_value());
     }
@@ -2758,16 +2853,16 @@ mod tests {
         let id2 = PublicKeyHash { hash: [2; 20] };
 
         rep_engine
-            .trs
+            .trs_mut()
             .gain(Alpha(10), vec![(id1, Reputation(49))])
             .unwrap();
-        rep_engine.ars.push_activity(vec![id1]);
+        rep_engine.ars_mut().push_activity(vec![id1]);
 
         rep_engine
-            .trs
+            .trs_mut()
             .gain(Alpha(10), vec![(id2, Reputation(99))])
             .unwrap();
-        rep_engine.ars.push_activity(vec![id2]);
+        rep_engine.ars_mut().push_activity(vec![id2]);
 
         assert_eq!(rep_engine.threshold_factor(0, &dr_pkh), 0);
     }
@@ -2780,18 +2875,18 @@ mod tests {
         for i in 0..8 {
             ids.push(PublicKeyHash::from_bytes(&[i; 20]).unwrap());
         }
-        rep_engine.ars.push_activity(ids.clone());
+        rep_engine.ars_mut().push_activity(ids.clone());
 
         rep_engine
-            .trs
+            .trs_mut()
             .gain(Alpha(10), vec![(ids[0], Reputation(79))])
             .unwrap();
         rep_engine
-            .trs
+            .trs_mut()
             .gain(Alpha(10), vec![(ids[1], Reputation(9))])
             .unwrap();
         rep_engine
-            .trs
+            .trs_mut()
             .gain(Alpha(10), vec![(ids[2], Reputation(1))])
             .unwrap();
         rep_engine
@@ -2799,11 +2894,11 @@ mod tests {
             .gain(Alpha(10), vec![(ids[3], Reputation(1))])
             .unwrap();
         rep_engine
-            .trs
+            .trs_mut()
             .gain(Alpha(10), vec![(ids[4], Reputation(1))])
             .unwrap();
         rep_engine
-            .trs
+            .trs_mut()
             .gain(Alpha(10), vec![(ids[5], Reputation(1))])
             .unwrap();
 
@@ -2827,25 +2922,25 @@ mod tests {
         let id2 = PublicKeyHash { hash: [2; 20] };
 
         rep_engine
-            .trs
+            .trs_mut()
             .gain(Alpha(10), vec![(id1, Reputation(49))])
             .unwrap();
-        rep_engine.ars.push_activity(vec![id1]);
+        rep_engine.ars_mut().push_activity(vec![id1]);
 
         rep_engine
-            .trs
+            .trs_mut()
             .gain(Alpha(10), vec![(id2, Reputation(99))])
             .unwrap();
-        rep_engine.ars.push_activity(vec![id2]);
+        rep_engine.ars_mut().push_activity(vec![id2]);
 
         assert_eq!(rep_engine.threshold_factor(1, &dr_pkh), 1);
         assert_eq!(rep_engine.threshold_factor(2, &dr_pkh), 3);
 
         rep_engine
-            .trs
+            .trs_mut()
             .gain(Alpha(10), vec![(dr_pkh, Reputation(199))])
             .unwrap();
-        rep_engine.ars.push_activity(vec![dr_pkh]);
+        rep_engine.ars_mut().push_activity(vec![dr_pkh]);
 
         assert_eq!(rep_engine.threshold_factor(1, &dr_pkh), 3);
         assert_eq!(rep_engine.threshold_factor(2, &dr_pkh), 7);

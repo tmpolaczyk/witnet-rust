@@ -1272,7 +1272,7 @@ pub fn validate_block(
         }
         .into())
     } else {
-        let total_identities = rep_eng.ars.active_identities_number() as u32;
+        let total_identities = rep_eng.ars().active_identities_number() as u32;
         let (target_hash, _) = calculate_randpoe_threshold(total_identities, mining_bf);
 
         add_block_vrf_signature_to_verify(
@@ -1390,9 +1390,9 @@ pub fn calculate_reppoe_threshold(
     dr_pkh: &PublicKeyHash,
     num_witnesses: u16,
 ) -> (Hash, f64) {
-    let my_reputation = rep_eng.trs.get(pkh);
-    let total_active_reputation = rep_eng.trs.get_sum(rep_eng.ars.active_identities());
-    let num_active_identities = rep_eng.ars.active_identities_number() as u32;
+    let my_reputation = rep_eng.trs().get(pkh);
+    let total_active_reputation = rep_eng.trs().get_sum(rep_eng.ars().active_identities());
+    let num_active_identities = rep_eng.ars().active_identities_number() as u32;
     let total_active_rep = u64::from(total_active_reputation.0) + u64::from(num_active_identities);
 
     // Add 1 to reputation because otherwise a node with 0 reputation would
@@ -2064,10 +2064,10 @@ mod tests {
         let dr_pkh = PublicKeyHash::from_bytes(&[0x0a; 20]).unwrap();
         let id1 = PublicKeyHash::from_bytes(&[1; 20]).unwrap();
         rep_engine
-            .trs
+            .trs_mut()
             .gain(Alpha(10), vec![(id1, Reputation(50))])
             .unwrap();
-        rep_engine.ars.push_activity(vec![id1]);
+        rep_engine.ars_mut().push_activity(vec![id1]);
 
         // 100% when we have all the reputation
         let (t00, p00) = calculate_reppoe_threshold(&rep_engine, &id1, &dr_pkh, 1);
@@ -2076,10 +2076,10 @@ mod tests {
 
         let id2 = PublicKeyHash::from_bytes(&[2; 20]).unwrap();
         rep_engine
-            .trs
+            .trs_mut()
             .gain(Alpha(10), vec![(id2, Reputation(50))])
             .unwrap();
-        rep_engine.ars.push_activity(vec![id2]);
+        rep_engine.ars_mut().push_activity(vec![id2]);
 
         // 50% when there are 2 nodes with 50% of the reputation each
         let (t01, p01) = calculate_reppoe_threshold(&rep_engine, &id1, &dr_pkh, 1);
@@ -2098,30 +2098,30 @@ mod tests {
         for i in 0..8 {
             ids.push(PublicKeyHash::from_bytes(&[i; 20]).unwrap());
         }
-        rep_engine.ars.push_activity(ids.clone());
+        rep_engine.ars_mut().push_activity(ids.clone());
 
         rep_engine
-            .trs
+            .trs_mut()
             .gain(Alpha(10), vec![(ids[0], Reputation(79))])
             .unwrap();
         rep_engine
-            .trs
+            .trs_mut()
             .gain(Alpha(10), vec![(ids[1], Reputation(9))])
             .unwrap();
         rep_engine
-            .trs
+            .trs_mut()
             .gain(Alpha(10), vec![(ids[2], Reputation(1))])
             .unwrap();
         rep_engine
-            .trs
+            .trs_mut()
             .gain(Alpha(10), vec![(ids[3], Reputation(1))])
             .unwrap();
         rep_engine
-            .trs
+            .trs_mut()
             .gain(Alpha(10), vec![(ids[4], Reputation(1))])
             .unwrap();
         rep_engine
-            .trs
+            .trs_mut()
             .gain(Alpha(10), vec![(ids[5], Reputation(1))])
             .unwrap();
 
@@ -2227,14 +2227,14 @@ mod tests {
         assert_eq!(p01.round() as i128, 100);
 
         let id1 = PublicKeyHash::from_bytes(&[1; 20]).unwrap();
-        rep_engine.ars.push_activity(vec![id1]);
+        rep_engine.ars_mut().push_activity(vec![id1]);
         let (t02, p02) = calculate_reppoe_threshold(&rep_engine, &id0, &dr_pkh, 1);
         assert_eq!(t02, Hash::with_first_u32(0xFFFF_FFFF));
         assert_eq!(p02.round() as i128, 100);
 
         // 50% when the total reputation is 1
         rep_engine
-            .trs
+            .trs_mut()
             .gain(Alpha(10), vec![(id1, Reputation(1))])
             .unwrap();
         let (t03, p03) = calculate_reppoe_threshold(&rep_engine, &id0, &dr_pkh, 1);
@@ -2243,7 +2243,7 @@ mod tests {
 
         // 33% when the total reputation is 1 but there are 2 active identities
         let id2 = PublicKeyHash::from_bytes(&[2; 20]).unwrap();
-        rep_engine.ars.push_activity(vec![id2]);
+        rep_engine.ars_mut().push_activity(vec![id2]);
         let (t04, p04) = calculate_reppoe_threshold(&rep_engine, &id0, &dr_pkh, 1);
         assert_eq!(t04, Hash::with_first_u32(0x5555_5555));
         assert_eq!(p04.round() as i128, 33);
@@ -2251,11 +2251,11 @@ mod tests {
         // 10 identities with 100 total reputation: 1 / (100 + 10) ~= 0.9%
         for i in 3..=10 {
             rep_engine
-                .ars
+                .ars_mut()
                 .push_activity(vec![PublicKeyHash::from_bytes(&[i; 20]).unwrap()]);
         }
         rep_engine
-            .trs
+            .trs_mut()
             .gain(Alpha(10), vec![(id1, Reputation(99))])
             .unwrap();
         let (t05, p05) = calculate_reppoe_threshold(&rep_engine, &id0, &dr_pkh, 1);
@@ -2270,10 +2270,10 @@ mod tests {
         let dr_pkh = PublicKeyHash::from_bytes(&[0x0a; 20]).unwrap();
         let id0 = PublicKeyHash::from_bytes(&[0; 20]).unwrap();
         let id1 = PublicKeyHash::from_bytes(&[1; 20]).unwrap();
-        rep_engine.ars.push_activity(vec![id0]);
-        rep_engine.ars.push_activity(vec![id1]);
+        rep_engine.ars_mut().push_activity(vec![id0]);
+        rep_engine.ars_mut().push_activity(vec![id1]);
         rep_engine
-            .trs
+            .trs_mut()
             .gain(Alpha(10), vec![(id0, Reputation(u32::max_value() - 2))])
             .unwrap();
 
@@ -2290,16 +2290,16 @@ mod tests {
         let id1 = PublicKeyHash::from_bytes(&[1; 20]).unwrap();
 
         rep_engine
-            .trs
+            .trs_mut()
             .gain(Alpha(10), vec![(dr_pkh, Reputation(99))])
             .unwrap();
-        rep_engine.ars.push_activity(vec![dr_pkh]);
+        rep_engine.ars_mut().push_activity(vec![dr_pkh]);
 
         rep_engine
-            .trs
+            .trs_mut()
             .gain(Alpha(10), vec![(id1, Reputation(49))])
             .unwrap();
-        rep_engine.ars.push_activity(vec![id1]);
+        rep_engine.ars_mut().push_activity(vec![id1]);
 
         // 100% when we have all the reputation (ignoring data requester reputation)
         let (t00, p00) = calculate_reppoe_threshold(&rep_engine, &id1, &dr_pkh, 1);
@@ -2308,10 +2308,10 @@ mod tests {
 
         let id2 = PublicKeyHash::from_bytes(&[2; 20]).unwrap();
         rep_engine
-            .trs
+            .trs_mut()
             .gain(Alpha(10), vec![(id2, Reputation(49))])
             .unwrap();
-        rep_engine.ars.push_activity(vec![id2]);
+        rep_engine.ars_mut().push_activity(vec![id2]);
 
         // 50% when there are 2 nodes with 50% of the reputation each (ignoring data requester reputation)
         let (t01, p01) = calculate_reppoe_threshold(&rep_engine, &id1, &dr_pkh, 1);
