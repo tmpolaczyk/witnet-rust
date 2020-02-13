@@ -1921,8 +1921,12 @@ impl ReputationEngine {
 
     /// Invalidate cached values of self.threshold_factor
     /// Must be called after mutating self.ars or self.trs
-    fn invalidate_reputation_threshold_cache(&self) {
+    pub fn invalidate_reputation_threshold_cache(&self) {
         self.threshold_cache.borrow_mut().invalidate()
+    }
+
+    pub fn clear_threshold_cache(&self) {
+        self.threshold_cache.borrow_mut().clear_threshold_cache()
     }
 }
 
@@ -1949,6 +1953,9 @@ struct ReputationThresholdCache {
 }
 
 impl ReputationThresholdCache {
+    fn clear_threshold_cache(&mut self) {
+        self.threshold.clear();
+    }
     fn initialize(&mut self, total_active_rep: u64, sorted_active_rep: Vec<u32>) {
         self.threshold.clear();
         self.total_active_rep = total_active_rep;
