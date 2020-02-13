@@ -1880,34 +1880,43 @@ impl ReputationEngine {
         &mut self.ars
     }
 
+    /// Calculate total active reputation and sorted active reputation
+    fn calculate_active_rep(&self) -> (u64, Vec<u32>) {
+        let mut total_active_rep = 0;
+        let sorted_identities: Vec<u32> = self
+            .ars
+            .active_identities()
+            .map(|pkh| self.trs.get(pkh).0 + 1)
+            .inspect(|rep| total_active_rep += u64::from(*rep))
+            .sorted_by_key(|&r| std::cmp::Reverse(r))
+            .collect();
+
+        (total_active_rep, sorted_identities)
+    }
+
     /// Return a factor to increase the threshold dynamically
     pub fn threshold_factor(&self, witnesses_number: u16, dr_pkh: &PublicKeyHash) -> u32 {
-        let gen = || {
-            let total_active_reputation = self.trs.get_sum(self.ars.active_identities());
-            let num_active_identities = self.ars.active_identities_number() as u32;
-            let total_active_rep =
-                u64::from(total_active_reputation.0) + u64::from(num_active_identities);
-
-            let sorted_identities: Vec<u32> = self
-                .ars
-                .active_identities()
-                .map(|pkh| self.trs.get(pkh).0 + 1)
-                .sorted_by_key(|&r| std::cmp::Reverse(r))
-                .collect();
-
-            (total_active_rep, sorted_identities)
-        };
-
         // Mitigate case of Data Requester has a significant reputation
         // which affects to the dynamic threshold
         let dr_rep = self.trs.get(dr_pkh).0 + 1;
         let n = update_witnesses_number(
             witnesses_number,
             dr_rep,
-            self.threshold_cache.borrow_mut().sorted_active_rep(gen),
+            self.threshold_cache
+                .borrow_mut()
+                .sorted_active_reputation(|| self.calculate_active_rep()),
         );
 
-        self.threshold_cache.borrow_mut().threshold_factor(n, gen)
+        self.threshold_cache
+            .borrow_mut()
+            .threshold_factor(n, || self.calculate_active_rep())
+    }
+
+    /// Return the total active reputation, adding 1 point for every active identity
+    pub fn total_active_reputation(&self) -> u64 {
+        self.threshold_cache
+            .borrow_mut()
+            .total_active_reputation(|| self.calculate_active_rep())
     }
 
     /// Invalidate cached values of self.threshold_factor
@@ -1976,7 +1985,19 @@ impl ReputationThresholdCache {
         })
     }
 
-    fn sorted_active_rep<F>(&mut self, gen: F) -> &[u32]
+    fn total_active_reputation<F>(&mut self, gen: F) -> u64
+    where
+        F: Fn() -> (u64, Vec<u32>),
+    {
+        if !self.valid {
+            let (total_active_rep, sorted_active_rep) = gen();
+            self.initialize(total_active_rep, sorted_active_rep);
+        }
+
+        self.total_active_rep
+    }
+
+    fn sorted_active_reputation<F>(&mut self, gen: F) -> &[u32]
     where
         F: Fn() -> (u64, Vec<u32>),
     {
