@@ -36,7 +36,6 @@ use crate::{
     vrf::{BlockEligibilityClaim, DataRequestEligibilityClaim},
 };
 use bech32::{FromBase32, ToBase32};
-use itertools::Itertools;
 use std::cell::RefCell;
 
 pub trait Hashable {
@@ -1883,13 +1882,13 @@ impl ReputationEngine {
     /// Calculate total active reputation and sorted active reputation
     fn calculate_active_rep(&self) -> (u64, Vec<u32>) {
         let mut total_active_rep = 0;
-        let sorted_identities: Vec<u32> = self
+        let mut sorted_identities: Vec<u32> = self
             .ars
             .active_identities()
             .map(|pkh| self.trs.get(pkh).0 + 1)
             .inspect(|rep| total_active_rep += u64::from(*rep))
-            .sorted_by_key(|&r| std::cmp::Reverse(r))
             .collect();
+        sorted_identities.sort_unstable_by_key(|&r| std::cmp::Reverse(r));
 
         (total_active_rep, sorted_identities)
     }
