@@ -875,7 +875,7 @@ impl Handler<GetReputationStatus> for ChainManager {
         };
 
         let num_active_identities = rep_eng.ars().active_identities_number() as u32;
-        let total_active_reputation = rep_eng.trs().get_sum(rep_eng.ars().active_identities());
+        let total_active_reputation = rep_eng.total_active_reputation();
 
         Ok(GetReputationStatusResult {
             num_active_identities,

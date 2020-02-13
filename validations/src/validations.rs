@@ -1391,9 +1391,7 @@ pub fn calculate_reppoe_threshold(
     num_witnesses: u16,
 ) -> (Hash, f64) {
     let my_reputation = rep_eng.trs().get(pkh);
-    let total_active_reputation = rep_eng.trs().get_sum(rep_eng.ars().active_identities());
-    let num_active_identities = rep_eng.ars().active_identities_number() as u32;
-    let total_active_rep = u64::from(total_active_reputation.0) + u64::from(num_active_identities);
+    let total_active_rep = rep_eng.total_active_reputation();
 
     // Add 1 to reputation because otherwise a node with 0 reputation would
     // never be eligible for a data request
