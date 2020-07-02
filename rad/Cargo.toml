@@ -16,7 +16,7 @@ log = "0.4.8"
 num_enum = "0.4.2"
 rand = "0.7.3"
 reqwest = "0.10.1"
-serde = "1.0.111"
+serde = "1.0.114"
 serde_cbor = "0.11.1"
 surf = { version = "1.0.3", default-features = false, features = ["native-client"] }
 url = "2.1.1"

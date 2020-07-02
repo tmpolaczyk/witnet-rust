@@ -10,7 +10,7 @@ edition = "2018"
 failure = "0.1.8"
 log = "0.4.8"
 rand = "0.7.3"
-serde = { version = "1.0.104", features = ["derive"] }
+serde = { version = "1.0.114", features = ["derive"] }
 
 witnet_crypto = { path = "../crypto" }
 witnet_util = { path = "../util" }
