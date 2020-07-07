@@ -39,9 +39,7 @@ pub struct PeersManager {
     /// Known peers
     peers: Peers,
     /// Period to consider if a peer is updated
-    pub bucketing_update_period: i64,
-    /// Timeout for handshake
-    pub handshake_timeout: Duration,
+    bucketing_update_period: i64,
     /// Magic number from ConsensusConstants
     magic: u16,
 }
@@ -66,17 +64,8 @@ impl PeersManager {
         });
     }
 
-    fn import_peers(&mut self, peers: Peers, known_peers: Vec<SocketAddr>) {
-        self.peers = peers;
-
-        match self.peers.add_to_new(known_peers, None) {
-            Ok(_duplicated_peers) => {}
-            Err(e) => log::error!("Error when adding peer addresses from config: {}", e),
-        }
-    }
-
     /// Method to try a peer before to insert in the tried addresses bucket
-    pub fn try_peer(&mut self, _ctx: &mut Context<Self>, address: SocketAddr) {
+    fn try_peer(&mut self, _ctx: &mut Context<Self>, address: SocketAddr) {
         let connections_manager_addr = ConnectionsManager::from_registry();
         let current_ts = get_timestamp();
 
@@ -122,7 +111,7 @@ impl PeersManager {
     }
 
     /// Method to try peers periodically to move peers from new to tried
-    pub fn feeler(&mut self, ctx: &mut Context<Self>, feeler_peers_period: Duration) {
+    fn feeler(&mut self, ctx: &mut Context<Self>, feeler_peers_period: Duration) {
         // Schedule the discovery_peers with a given period
         ctx.run_later(feeler_peers_period, move |act, ctx| {
             if let Some((key, peer)) = act.peers.get_new_random_peer() {
@@ -134,12 +123,12 @@ impl PeersManager {
     }
 
     /// Set Magic number
-    pub fn set_magic(&mut self, new_magic: u16) {
+    fn set_magic(&mut self, new_magic: u16) {
         self.magic = new_magic;
     }
 
     /// Get Magic number
-    pub fn get_magic(&self) -> u16 {
+    fn get_magic(&self) -> u16 {
         self.magic
     }
 }

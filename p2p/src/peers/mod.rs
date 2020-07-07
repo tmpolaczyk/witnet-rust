@@ -67,6 +67,8 @@ impl Peers {
         let (_, group, host_id) = split_socket_addresses(socket_addr);
         let (_, src_group, _) = split_socket_addresses(src_socket_addr);
 
+        log::debug!("Peers sk: {}", self.sk);
+
         calculate_index_for_new(self.sk, &src_group, &group, &host_id)
     }
 
