@@ -149,6 +149,13 @@ pub fn jsonrpc_io_handler(
             unauthorized_method("addPeers")
         }
     });
+    io.add_method("debug_getPersistedChainState", move |params: Params| {
+        if enable_sensitive_methods {
+            debug_get_persisted_chain_state(params.parse())
+        } else {
+            unauthorized_method("debug_getPersistedChainState")
+        }
+    });
 
     // Enable subscriptions
     // We need two Arcs, one for subscribe and one for unsuscribe
@@ -1202,6 +1209,33 @@ pub fn add_peers(params: Result<Vec<SocketAddr>, jsonrpc_core::Error>) -> JsonRp
                 futures::finished(Value::Bool(true))
             }
             Err(e) => futures::failed(internal_error_s(e)),
+        });
+
+    Box::new(fut)
+}
+
+/// Get chain state from storage
+pub fn debug_get_persisted_chain_state(
+    params: Result<(), jsonrpc_core::Error>,
+) -> JsonRpcResultAsync {
+    let _ = match params {
+        Ok(x) => x,
+        Err(e) => return Box::new(futures::failed(e)),
+    };
+
+    let fut = config_mngr::get()
+        .map(|config| config.consensus_constants.get_magic())
+        .and_then(|magic| storage_mngr::get::<_, ChainState>(&storage_keys::chain_state_key(magic)))
+        .map_err(internal_error)
+        .and_then(|res| match res {
+            Some(chain_state) => match serde_json::to_value(&chain_state) {
+                Ok(x) => futures::finished(x),
+                Err(e) => {
+                    let err = internal_error_s(e);
+                    futures::failed(err)
+                }
+            },
+            None => futures::finished(Value::Object(Default::default())),
         });
 
     Box::new(fut)
