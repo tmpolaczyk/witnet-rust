@@ -1719,11 +1719,7 @@ mod tests {
         );
 
         // The members of the signing_committee should be p1, p3, p5, p7
-        assert!(subset.contains(&p1.pkh()));
-        assert!(subset.contains(&p3.pkh()));
-        assert!(subset.contains(&p5.pkh()));
-        assert!(subset.contains(&p7.pkh()));
-
+        assert_eq!(subset, vec![p1.pkh(), p3.pkh(), p5.pkh(), p7.pkh()].into_iter().collect());
         assert_eq!(usize::try_from(committee_size).unwrap(), subset.len());
     }
 
@@ -1761,9 +1757,7 @@ mod tests {
         );
 
         // The members of the signing_committee should be p1, p3
-        assert!(subset.contains(&p1.pkh()));
-        assert!(subset.contains(&p3.pkh()));
-
+        assert_eq!(subset, vec![p1.pkh(), p3.pkh()].into_iter().collect());
         assert_eq!(usize::try_from(committee_size).unwrap(), subset.len());
 
         sbs.ars_previous_identities = ars_identities;
@@ -1771,14 +1765,12 @@ mod tests {
         let subset_2 = calculate_superblock_signing_committee(
             sbs.ars_previous_identities.clone(),
             committee_size,
-            1,
+            9,
             sbs.current_superblock_beacon.hash_prev_block,
         );
 
         // The members of the signing_committee should be p1, p2
-        assert!(subset_2.contains(&p2.pkh()));
-        assert!(subset_2.contains(&p3.pkh()));
-
+        assert_eq!(subset_2, vec![p1.pkh(), p2.pkh()].into_iter().collect());
         assert_eq!(usize::try_from(committee_size).unwrap(), subset_2.len());
     }
 
