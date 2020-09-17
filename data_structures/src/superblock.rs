@@ -394,6 +394,9 @@ impl SuperBlockState {
 
         self.update_ars_identities(ars_identities);
 
+        // During synchronization we use the superblock received as consensus by our outbounds
+        // to have the right value of the signing committee size. From now on, we have all the values
+        // to construct our own superblocks.
         let superblock = if let Some(sb) = sync_superblock {
             // Before updating the superblock_beacon, calculate the signing committee
             self.signing_committee = calculate_superblock_signing_committee(
@@ -1601,6 +1604,71 @@ mod tests {
             sbs.current_superblock_beacon.hash_prev_block,
         );
         assert_eq!(ars_identities.len(), subset.len());
+    }
+    #[test]
+    fn test_build_superblock_with_optional_superblock() {
+        let mut sbs = SuperBlockState::default();
+        let block_headers = vec![BlockHeader::default()];
+        let genesis_hash = Hash::default();
+
+        let p1 = PublicKey::from_bytes([1; 33]);
+        let p2 = PublicKey::from_bytes([2; 33]);
+        let p3 = PublicKey::from_bytes([3; 33]);
+        let p4 = PublicKey::from_bytes([4; 33]);
+        let p5 = PublicKey::from_bytes([5; 33]);
+        let pkhs = vec![p1.pkh(), p2.pkh(), p3.pkh(), p4.pkh(), p5.pkh()];
+        let keys = vec![
+            create_bn256(1),
+            create_bn256(2),
+            create_bn256(3),
+            create_bn256(4),
+            create_bn256(5),
+        ];
+        let ars = ARSIdentities::new(pkhs.clone());
+        let alt_keys = create_alt_keys(pkhs, keys);
+
+        sbs.ars_current_identities = ars.clone();
+
+        let sb1 = sbs.build_superblock(
+            &block_headers,
+            ars.clone(),
+            2,
+            1,
+            genesis_hash,
+            &alt_keys,
+            None,
+        );
+
+        // Signing committee size of 2 has been included
+        assert_eq!(sbs.get_committee_length(), 2);
+
+        let sb2_a = sbs.build_superblock(
+            &block_headers,
+            ars.clone(),
+            3,
+            1,
+            genesis_hash,
+            &alt_keys,
+            None,
+        );
+
+        // SB2_A is different to SB1 and a signing committee size of 3 has been included
+        assert_ne!(sb1, sb2_a);
+        assert_eq!(sbs.get_committee_length(), 3);
+
+        let sb2_b = sbs.build_superblock(
+            &block_headers,
+            ars,
+            3,
+            1,
+            genesis_hash,
+            &alt_keys,
+            Some(sb1.clone()),
+        );
+
+        // SB2_B is equal to SB1 and a signing committee size of 2 has been included
+        assert_eq!(sb1, sb2_b);
+        assert_eq!(sbs.get_committee_length(), 2);
     }
 
     #[test]
