@@ -27,8 +27,6 @@ pub struct DataRequestPool {
     pub to_be_stored: Vec<DataRequestInfo>,
     /// Extra rounds for commitments and reveals
     pub extra_rounds: u16,
-    /// Keep a sum of all collateral that is locked in data requests
-    pub collateral_locked: u64,
 }
 
 impl DataRequestPool {
@@ -408,6 +406,24 @@ impl DataRequestPool {
     /// Get the data request info of the finished data requests, to be persisted to the storage
     pub fn finished_data_requests(&mut self) -> Vec<DataRequestInfo> {
         std::mem::replace(&mut self.to_be_stored, vec![])
+    }
+
+    /// Return the sum of all the collateral that is currently being used to resolve data requests
+    pub fn collateral_locked(&self, collateral_minimum: u64) -> u64 {
+        let mut total = 0;
+
+        for (_dr_hash, dr_state) in &self.data_request_pool {
+            let dr_collateral = dr_state.data_request.collateral;
+            let dr_collateral = if dr_collateral == 0 {
+                collateral_minimum
+            } else {
+                dr_collateral
+            };
+
+            total += dr_collateral * u64::try_from(dr_state.info.commits.len()).unwrap();
+        }
+
+        total
     }
 }
 
