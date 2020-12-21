@@ -2536,7 +2536,7 @@ mod tests {
         transaction::{CommitTransaction, DRTransaction, RevealTransaction},
     };
 
-    pub use super::*;
+    use super::*;
     use witnet_config::{config::consensus_constants_from_partial, defaults::Testnet};
 
     #[test]

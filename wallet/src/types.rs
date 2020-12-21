@@ -3,7 +3,7 @@ use std::fmt;
 use std::sync::{Arc, RwLock};
 
 use core::fmt::Display;
-pub use std::str::FromStr;
+use std::str::FromStr;
 
 use crate::app::VttOutputParams;
 use failure::Fail;
@@ -14,8 +14,9 @@ pub use serde_json::Value as Json;
 
 pub use witnet_crypto::{
     hash::HashFunction,
-    key::{CryptoEngine, ExtendedPK, ExtendedSK, KeyDerivationError, KeyPath, ONE_KEY, PK, SK},
+    key::{CryptoEngine, ExtendedPK, ExtendedSK, KeyDerivationError, KeyPath, PK, SK},
     mnemonic::{Length as MnemonicLength, Mnemonic, MnemonicGen},
+    secp256k1::key::ONE_KEY,
     signature,
 };
 pub use witnet_data_structures::{
