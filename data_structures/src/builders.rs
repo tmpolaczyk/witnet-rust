@@ -1,7 +1,6 @@
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 
 use rand::{thread_rng, Rng};
-
 use witnet_util::timestamp::get_timestamp;
 
 use crate::{

@@ -3,18 +3,19 @@ use std::{collections::BTreeMap, time::Duration};
 use actix::prelude::*;
 use ansi_term::Color::Purple;
 use rand::Rng;
-
 use witnet_data_structures::{
     chain::{Epoch, EpochConstants},
     error::EpochCalculationError,
 };
+use witnet_futures_utils::ActorFutureExt;
 use witnet_util::timestamp::{
     duration_between_timestamps, get_timestamp, get_timestamp_nanos, update_global_timestamp,
 };
 
-use crate::actors::messages::{EpochNotification, EpochResult};
-use crate::config_mngr;
-use witnet_futures_utils::ActorFutureExt;
+use crate::{
+    actors::messages::{EpochNotification, EpochResult},
+    config_mngr,
+};
 
 mod actor;
 mod handlers;

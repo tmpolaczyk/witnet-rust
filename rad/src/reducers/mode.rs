@@ -1,8 +1,9 @@
+use std::{collections::HashMap, convert::TryFrom};
+
 use crate::{
     error::RadError,
     types::{array::RadonArray, RadonType, RadonTypes},
 };
-use std::{collections::HashMap, convert::TryFrom};
 
 pub fn mode(input: &RadonArray) -> Result<RadonTypes, RadError> {
     let value = input.value();
@@ -40,7 +41,6 @@ pub fn mode(input: &RadonArray) -> Result<RadonTypes, RadError> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
     use crate::{
         error::RadError::{ModeEmpty, ModeTie},
         types::{float::RadonFloat, integer::RadonInteger, string::RadonString},

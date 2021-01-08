@@ -4,7 +4,6 @@ use serde_cbor::{
     self as cbor,
     value::{from_value, Value},
 };
-
 use witnet_data_structures::{
     chain::RADFilter,
     radon_report::{RadonReport, ReportContext, Stage},
@@ -268,11 +267,12 @@ pub fn create_radon_script_from_filters_and_reducer(
 
 #[test]
 fn test_execute_radon_script() {
+    use std::collections::HashMap;
+
     use crate::types::{
         array::RadonArray, float::RadonFloat, integer::RadonInteger, map::RadonMap,
         string::RadonString,
     };
-    use std::collections::HashMap;
 
     let input = RadonTypes::from(RadonString::from(
         r#"{"coord":{"lon":13.41,"lat":52.52},"weather":[{"id":600,"main":"Snow","description":"light snow","icon":"13n"}],"base":"stations","main":{"temp":-4,"pressure":1013,"humidity":73,"temp_min":-4,"temp_max":-4},"visibility":10000,"wind":{"speed":2.6,"deg":90},"clouds":{"all":75},"dt":1548346800,"sys":{"type":1,"id":1275,"message":0.0038,"country":"DE","sunrise":1548313160,"sunset":1548344298},"id":2950159,"name":"Berlin","cod":200}"#,

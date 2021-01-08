@@ -1,9 +1,10 @@
+use witnet_data_structures::radon_report::{ReportContext, Stage};
+
 use crate::{
     error::RadError,
     reducers::mode::mode,
     types::{array::RadonArray, RadonType, RadonTypes},
 };
-use witnet_data_structures::radon_report::{ReportContext, Stage};
 
 pub fn mode_filter(
     input: &RadonArray,
@@ -31,9 +32,10 @@ pub fn mode_filter(
 
 #[cfg(test)]
 mod tests {
+    use witnet_data_structures::radon_report::TallyMetaData;
+
     use super::*;
     use crate::types::{integer::RadonInteger, string::RadonString};
-    use witnet_data_structures::radon_report::TallyMetaData;
 
     // Helper function which works with Rust integers, to remove RadonTypes from tests
     fn imode(

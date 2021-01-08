@@ -1,5 +1,4 @@
-use witnet_data_structures::chain::PublicKey;
-use witnet_data_structures::{proto::ProtobufConvert, types, types::IpAddress};
+use witnet_data_structures::{chain::PublicKey, proto::ProtobufConvert, types, types::IpAddress};
 
 #[test]
 fn address_proto() {

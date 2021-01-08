@@ -1,3 +1,7 @@
+use std::{collections::HashSet, convert::TryFrom};
+
+use serde::{Deserialize, Serialize};
+
 use crate::{
     chain::{
         DataRequestOutput, Epoch, EpochConstants, Input, OutputPointer, PublicKeyHash,
@@ -9,8 +13,6 @@ use crate::{
         NodeUtxos, OwnUnspentOutputsPool, UnspentOutputsPool, UtxoDiff, UtxoSelectionStrategy,
     },
 };
-use serde::{Deserialize, Serialize};
-use std::{collections::HashSet, convert::TryFrom};
 
 /// Structure that resumes the information needed to create a Transaction
 pub struct TransactionInfo {
@@ -464,15 +466,16 @@ pub fn transaction_outputs_sum(outputs: &[ValueTransferOutput]) -> Result<u64, T
 
 #[cfg(test)]
 mod tests {
+    use std::{
+        convert::TryFrom,
+        sync::atomic::{AtomicU32, Ordering},
+    };
+
     use super::*;
     use crate::{
         chain::{generate_unspent_outputs_pool, Hashable, PublicKey},
         error::TransactionError,
         transaction::*,
-    };
-    use std::{
-        convert::TryFrom,
-        sync::atomic::{AtomicU32, Ordering},
     };
 
     const MAX_VT_WEIGHT: u32 = 20000;

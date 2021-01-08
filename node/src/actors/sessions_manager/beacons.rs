@@ -1,5 +1,8 @@
-use std::collections::{HashMap, HashSet};
-use std::net::SocketAddr;
+use std::{
+    collections::{HashMap, HashSet},
+    net::SocketAddr,
+};
+
 use witnet_data_structures::types::LastBeacon;
 
 /// Stores the LastBeacons received from our peers, and also keeps track
@@ -88,9 +91,10 @@ impl Beacons {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use itertools::Itertools;
     use witnet_data_structures::chain::{CheckpointBeacon, Hash};
+
+    use super::*;
 
     // Helper functions needed because using assert_eq! with hashmaps is non-ergonomic
     fn pb_to_sorted_vec<'a, 'b, I: IntoIterator<Item = (&'a SocketAddr, &'b LastBeacon)>>(

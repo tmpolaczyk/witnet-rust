@@ -1,5 +1,10 @@
 use actix::prelude::*;
 use serde::{Deserialize, Serialize};
+use witnet_data_structures::{
+    chain::{Environment, PublicKeyHash},
+    transaction_factory::FeeType,
+};
+use witnet_futures_utils::ActorFutureExt;
 
 use crate::{
     actors::app,
@@ -9,12 +14,6 @@ use crate::{
         VttOutputParamsHelper,
     },
 };
-
-use witnet_data_structures::{
-    chain::{Environment, PublicKeyHash},
-    transaction_factory::FeeType,
-};
-use witnet_futures_utils::ActorFutureExt;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VttOutputParams {
@@ -155,8 +154,9 @@ pub fn validate_output_addresses(
 
 #[cfg(test)]
 mod tests {
-    use crate::actors::app::{validate_output_addresses, VttOutputParams};
     use witnet_data_structures::chain::{Environment, PublicKeyHash, ValueTransferOutput};
+
+    use crate::actors::app::{validate_output_addresses, VttOutputParams};
 
     #[test]
     fn test_validate_addresses() {

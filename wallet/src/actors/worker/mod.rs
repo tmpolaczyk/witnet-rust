@@ -1,5 +1,4 @@
-use std::result;
-use std::sync::Arc;
+use std::{result, sync::Arc};
 
 use actix::prelude::*;
 

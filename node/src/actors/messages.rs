@@ -14,7 +14,6 @@ use actix::{
 };
 use serde::{Deserialize, Serialize};
 use tokio::net::TcpStream;
-
 use witnet_data_structures::{
     chain::{
         Block, CheckpointBeacon, DataRequestInfo, DataRequestOutput, Epoch, EpochConstants, Hash,

@@ -3,14 +3,14 @@ use std::{collections::HashMap, fmt};
 
 use failure::_core::fmt::Formatter;
 use serde::{Deserialize, Serialize};
+use witnet_data_structures::chain::{OutputPointer, PublicKeyHash, ValueTransferOutput};
+use witnet_util::timestamp::get_timestamp;
 
 use crate::{
     account,
     repository::keys::Key,
     types::{self, number_from_string, u32_to_string, u64_to_string},
 };
-use witnet_data_structures::chain::{OutputPointer, PublicKeyHash, ValueTransferOutput};
-use witnet_util::timestamp::get_timestamp;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Wallet {

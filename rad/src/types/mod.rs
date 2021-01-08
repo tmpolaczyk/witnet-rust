@@ -7,8 +7,12 @@ use std::{
 use cbor::value::Value as CborValue;
 use serde::{Serialize, Serializer};
 use serde_cbor::{to_vec, Value};
-
 use witnet_crypto::hash::calculate_sha256;
+use witnet_data_structures::{
+    chain::Hash,
+    radon_error::{try_from_cbor_value_for_serde_cbor_value, RadonError},
+    radon_report::{RadonReport, ReportContext, TypeLike},
+};
 
 use crate::{
     error::RadError,
@@ -17,11 +21,6 @@ use crate::{
         array::RadonArray, boolean::RadonBoolean, bytes::RadonBytes, float::RadonFloat,
         integer::RadonInteger, map::RadonMap, string::RadonString,
     },
-};
-use witnet_data_structures::{
-    chain::Hash,
-    radon_error::{try_from_cbor_value_for_serde_cbor_value, RadonError},
-    radon_report::{RadonReport, ReportContext, TypeLike},
 };
 
 pub mod array;

@@ -1,7 +1,6 @@
 use actix::prelude::*;
 
-use crate::actors::worker;
-use crate::model;
+use crate::{actors::worker, model};
 
 pub struct WalletInfos;
 

@@ -1,16 +1,16 @@
 use std::{process::exit, result::Result, sync::Arc};
 
 use actix::{Actor, System, SystemRegistry};
-
-use crate::actors::{
-    chain_manager::ChainManager, connections_manager::ConnectionsManager,
-    epoch_manager::EpochManager, inventory_manager::InventoryManager, json_rpc::JsonRpcServer,
-    peers_manager::PeersManager, rad_manager::RadManager, sessions_manager::SessionsManager,
-};
-use crate::config_mngr;
-use crate::signature_mngr;
-use crate::storage_mngr;
 use witnet_config::config::Config;
+
+use crate::{
+    actors::{
+        chain_manager::ChainManager, connections_manager::ConnectionsManager,
+        epoch_manager::EpochManager, inventory_manager::InventoryManager, json_rpc::JsonRpcServer,
+        peers_manager::PeersManager, rad_manager::RadManager, sessions_manager::SessionsManager,
+    },
+    config_mngr, signature_mngr, storage_mngr,
+};
 
 /// Function to run the main system
 pub fn run(config: Arc<Config>, callback: fn()) -> Result<(), failure::Error> {

@@ -1,7 +1,5 @@
 use actix::prelude::*;
-
-use witnet_net::client::tcp::jsonrpc;
-use witnet_net::server::ws::Server;
+use witnet_net::{client::tcp::jsonrpc, server::ws::Server};
 
 use crate::types;
 

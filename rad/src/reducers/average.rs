@@ -129,12 +129,11 @@ pub fn mean(input: &RadonArray, return_policy: MeanReturnPolicy) -> Result<Radon
 mod tests {
     use serde_cbor::Value;
 
+    use super::*;
     use crate::{
         operators::array::reduce,
         types::{float::RadonFloat, integer::RadonInteger, string::RadonString},
     };
-
-    use super::*;
 
     #[test]
     fn test_reduce_average_mean_float() {

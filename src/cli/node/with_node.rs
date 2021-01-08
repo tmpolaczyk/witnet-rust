@@ -6,7 +6,6 @@ use std::{
 };
 
 use structopt::StructOpt;
-
 use witnet_config::config::Config;
 use witnet_node as node;
 

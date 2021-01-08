@@ -1,12 +1,13 @@
+use std::future;
+
 use futures::FutureExt;
+use futures_util::compat::{Compat, Compat01As03};
 use jsonrpc_core::{Middleware, Params};
 use jsonrpc_pubsub::{PubSubHandler, PubSubMetadata, Subscriber};
 use serde_json::json;
-use std::future;
+use witnet_futures_utils::TryFutureExt2;
 
 use super::*;
-use futures_util::compat::{Compat, Compat01As03};
-use witnet_futures_utils::TryFutureExt2;
 
 /// Helper macro to add multiple JSON-RPC methods at once
 macro_rules! routes {

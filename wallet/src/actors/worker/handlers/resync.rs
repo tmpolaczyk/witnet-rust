@@ -1,7 +1,6 @@
 use actix::{Handler, Message};
 
-use crate::actors::worker;
-use crate::types;
+use crate::{actors::worker, types};
 
 pub struct Resync {
     pub wallet_id: String,

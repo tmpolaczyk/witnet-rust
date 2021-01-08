@@ -1,7 +1,8 @@
 //! Error type definitions for the data structure module.
 
-use failure::Fail;
 use std::num::ParseIntError;
+
+use failure::Fail;
 
 use crate::chain::{DataRequestOutput, Epoch, Hash, HashParseError, OutputPointer, PublicKeyHash};
 

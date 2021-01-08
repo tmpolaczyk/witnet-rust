@@ -1,6 +1,7 @@
+use std::fmt::Debug;
+
 use bincode::{deserialize, serialize};
 use serde::{de::DeserializeOwned, Serialize};
-use std::fmt::Debug;
 use witnet_data_structures::chain::*;
 
 fn t<T>(al: T)

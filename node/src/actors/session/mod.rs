@@ -1,9 +1,9 @@
 use std::{collections::HashMap, net::SocketAddr, sync::Arc};
 
 use actix::{io::FramedWrite, SystemService};
-
 use ansi_term::Color::Green;
-
+use bytes::BytesMut;
+use tokio::net::tcp::OwnedWriteHalf;
 use witnet_config::config::Config;
 use witnet_data_structures::{
     chain::{Block, Epoch, Hash},
@@ -13,8 +13,6 @@ use witnet_data_structures::{
 use witnet_p2p::sessions::{SessionStatus, SessionType};
 
 use crate::actors::{codec::P2PCodec, messages::LogMessage, sessions_manager::SessionsManager};
-use bytes::BytesMut;
-use tokio::net::tcp::OwnedWriteHalf;
 
 mod actor;
 

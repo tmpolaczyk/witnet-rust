@@ -1,8 +1,8 @@
 //! PBKDF2 Derivation Function
 
-use ring::pbkdf2;
 use std::num::NonZeroU32;
 
+use ring::pbkdf2;
 use witnet_protected::Protected;
 
 /// Derive a key with PBKDF2

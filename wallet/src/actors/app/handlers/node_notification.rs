@@ -1,5 +1,4 @@
 use actix::prelude::*;
-
 use witnet_net::client::tcp::jsonrpc;
 
 use crate::actors::app;

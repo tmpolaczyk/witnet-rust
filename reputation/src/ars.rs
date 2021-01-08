@@ -1,13 +1,16 @@
 //! Active Reputation Set
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
-use crate::error::ReputationError;
-use crate::trs::{decrement_cache, increment_cache};
 use std::{
     collections::{HashMap, HashSet, VecDeque},
     hash::Hash,
+};
+
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
+use crate::{
+    error::ReputationError,
+    trs::{decrement_cache, increment_cache},
 };
 
 /// Active Reputation Set

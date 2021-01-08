@@ -2,19 +2,18 @@ use std::sync::Arc;
 
 use actix::utils::TimerFunc;
 use futures::FutureExt;
-
 use witnet_crypto::mnemonic::Mnemonic;
 use witnet_data_structures::chain::{InventoryItem, StateMachine};
-
-use crate::actors::{
-    worker::{HandleBlockRequest, HandleSuperBlockRequest, NodeStatusRequest, NotifyStatus},
-    *,
-};
-use crate::crypto;
-use crate::model;
+use witnet_futures_utils::{ActorFutureExt, TryFutureExt2};
 
 use super::*;
-use witnet_futures_utils::{ActorFutureExt, TryFutureExt2};
+use crate::{
+    actors::{
+        worker::{HandleBlockRequest, HandleSuperBlockRequest, NodeStatusRequest, NotifyStatus},
+        *,
+    },
+    crypto, model,
+};
 
 pub struct Validated {
     pub description: Option<String>,

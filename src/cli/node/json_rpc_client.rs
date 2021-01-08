@@ -1,9 +1,3 @@
-use ansi_term::Color::{Purple, Red, White, Yellow};
-use failure::{bail, Fail};
-use itertools::Itertools;
-use prettytable::{cell, row, Table};
-use serde::{Deserialize, Serialize};
-use serde_json::json;
 use std::{
     collections::HashMap,
     convert::{TryFrom, TryInto},
@@ -15,6 +9,12 @@ use std::{
     str::FromStr,
 };
 
+use ansi_term::Color::{Purple, Red, White, Yellow};
+use failure::{bail, Fail};
+use itertools::Itertools;
+use prettytable::{cell, row, Table};
+use serde::{Deserialize, Serialize};
+use serde_json::json;
 use witnet_crypto::{
     hash::calculate_sha256,
     key::{CryptoEngine, ExtendedPK, ExtendedSK},

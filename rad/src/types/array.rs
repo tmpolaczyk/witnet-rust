@@ -1,9 +1,9 @@
-use serde_cbor::value::{from_value, Value};
 use std::{
     convert::{TryFrom, TryInto},
     fmt,
 };
 
+use serde_cbor::value::{from_value, Value};
 use witnet_data_structures::radon_report::ReportContext;
 
 use crate::{
@@ -185,6 +185,10 @@ impl Operable for RadonArray {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+
+    use witnet_data_structures::radon_report::TypeLike;
+
     use super::*;
     use crate::{
         reducers::RadonReducers,
@@ -193,8 +197,6 @@ mod tests {
             map::RadonMap, string::RadonString,
         },
     };
-    use std::collections::HashMap;
-    use witnet_data_structures::radon_report::TypeLike;
 
     #[test]
     fn test_operate_identity() {

@@ -6,12 +6,14 @@
 
 // Ideally all this code would be generated with a `#[serde(human_readable_string)]` macro.
 
-use crate::chain::{
-    GenesisBlockInfo, Hash, OutputPointer, PublicKeyHash, ValueTransferOutput, SHA256,
-};
-use crate::get_environment;
-use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use std::{fmt::Display, str::FromStr};
+
+use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+
+use crate::{
+    chain::{GenesisBlockInfo, Hash, OutputPointer, PublicKeyHash, ValueTransferOutput, SHA256},
+    get_environment,
+};
 
 #[derive(Deserialize, Serialize)]
 enum HashSerializationHelper {

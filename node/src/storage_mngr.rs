@@ -1,16 +1,15 @@
 //! # Storage Manager
 //!
 //! This module provides a Storage Manager
-use std::future;
-use std::sync::Arc;
+use std::{future, sync::Arc};
 
 use actix::prelude::*;
 use bincode::{deserialize, serialize};
-
-use crate::config_mngr;
 use witnet_config::config;
 use witnet_futures_utils::{ActorFutureExt, TryFutureExt2};
 use witnet_storage::{backends, storage};
+
+use crate::config_mngr;
 
 macro_rules! as_failure {
     ($e:expr) => {

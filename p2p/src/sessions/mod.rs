@@ -3,13 +3,12 @@
 /// Bounded sessions module
 pub mod bounded_sessions;
 
-use std::net::SocketAddr;
+use std::{collections::HashSet, net::SocketAddr};
 
 use rand::{thread_rng, Rng};
 
 use super::{error::SessionsError, sessions::bounded_sessions::BoundedSessions};
 use crate::peers::split_socket_addresses;
-use std::collections::HashSet;
 
 /// Session type
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]

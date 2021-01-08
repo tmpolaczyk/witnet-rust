@@ -1,3 +1,8 @@
+use std::convert::TryFrom;
+
+use serde_cbor::Value;
+use witnet_data_structures::radon_report::{ReportContext, Stage};
+
 use crate::{
     error::RadError,
     filters::RadonFilters,
@@ -5,9 +10,6 @@ use crate::{
     reducers,
     types::{array::RadonArray, boolean::RadonBoolean, float::RadonFloat, RadonType, RadonTypes},
 };
-use serde_cbor::Value;
-use std::convert::TryFrom;
-use witnet_data_structures::radon_report::{ReportContext, Stage};
 
 // FIXME: Allow for now, wait for https://github.com/rust-lang/rust/issues/67058 to reach stable
 #[allow(clippy::cast_precision_loss)]
@@ -219,10 +221,12 @@ fn standard_limits(mean: f64, std_dev: f64, sigmas: f64) -> (f64, f64) {
 
 #[cfg(test)]
 mod tests {
+    use std::f64;
+
+    use witnet_data_structures::radon_report::TallyMetaData;
+
     use super::*;
     use crate::types::{float::RadonFloat, integer::RadonInteger, string::RadonString};
-    use std::f64;
-    use witnet_data_structures::radon_report::TallyMetaData;
 
     #[test]
     fn test_filter_deviation_standard_no_arg() {

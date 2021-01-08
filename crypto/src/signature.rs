@@ -1,8 +1,9 @@
 //! Signature module
 
-use crate::key::CryptoEngine;
 use failure::Fail;
 use secp256k1::{Message, SecretKey};
+
+use crate::key::CryptoEngine;
 
 /// Signature
 pub type Signature = secp256k1::Signature;
@@ -44,9 +45,12 @@ pub fn verify(
 
 #[cfg(test)]
 mod tests {
-    use crate::hash::{calculate_sha256, Sha256};
-    use crate::signature::{sign, verify};
     use secp256k1::{PublicKey, Secp256k1, SecretKey, Signature};
+
+    use crate::{
+        hash::{calculate_sha256, Sha256},
+        signature::{sign, verify},
+    };
 
     #[test]
     fn test_sign_and_verify() {

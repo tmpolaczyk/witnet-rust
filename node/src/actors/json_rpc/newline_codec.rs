@@ -1,6 +1,7 @@
+use std::io;
+
 use actix::Message;
 use bytes::{BufMut, BytesMut};
-use std::io;
 use tokio_util::codec::{Decoder, Encoder};
 
 /// Codec for JSON-RPC transport

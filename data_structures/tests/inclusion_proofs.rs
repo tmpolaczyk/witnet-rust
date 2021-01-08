@@ -1,4 +1,5 @@
 use std::convert::TryFrom;
+
 use witnet_crypto::{
     hash::Sha256,
     merkle::{merkle_tree_root as crypto_merkle_tree_root, sha256_concat, InclusionProof},

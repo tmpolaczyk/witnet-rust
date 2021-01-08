@@ -1,16 +1,6 @@
-use actix::prelude::*;
 use std::{str::FromStr, time::Duration};
 
-use super::{handlers::EveryEpochPayload, ChainManager};
-use crate::{
-    actors::{
-        epoch_manager::{EpochManager, EpochManagerError::CheckpointZeroInTheFuture},
-        messages::{AddBlocks, GetEpoch, GetEpochConstants, SetLastBeacon, Subscribe},
-        sessions_manager::SessionsManager,
-        storage_keys,
-    },
-    config_mngr, signature_mngr, storage_mngr,
-};
+use actix::prelude::*;
 use witnet_crypto::key::CryptoEngine;
 use witnet_data_structures::{
     chain::{
@@ -25,6 +15,17 @@ use witnet_data_structures::{
 };
 use witnet_futures_utils::ActorFutureExt;
 use witnet_util::timestamp::pretty_print;
+
+use super::{handlers::EveryEpochPayload, ChainManager};
+use crate::{
+    actors::{
+        epoch_manager::{EpochManager, EpochManagerError::CheckpointZeroInTheFuture},
+        messages::{AddBlocks, GetEpoch, GetEpochConstants, SetLastBeacon, Subscribe},
+        sessions_manager::SessionsManager,
+        storage_keys,
+    },
+    config_mngr, signature_mngr, storage_mngr,
+};
 
 /// Implement Actor trait for `ChainManager`
 impl Actor for ChainManager {

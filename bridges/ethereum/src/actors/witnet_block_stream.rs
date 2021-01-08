@@ -1,15 +1,17 @@
 //! Stream of Witnet events
 
+use std::{sync::Arc, time::Duration};
+
+use async_jsonrpc_client::{futures::Stream, DuplexTransport, Transport};
+use futures::{future::Either, sink::Sink};
+use serde_json::json;
+use tokio::{prelude::FutureExt, sync::mpsc};
+use web3::futures::Future;
+
 use crate::{
     actors::{SuperBlockNotification, WitnetSuperBlock},
     config::Config,
 };
-use async_jsonrpc_client::{futures::Stream, DuplexTransport, Transport};
-use futures::{future::Either, sink::Sink};
-use serde_json::json;
-use std::{sync::Arc, time::Duration};
-use tokio::{prelude::FutureExt, sync::mpsc};
-use web3::futures::Future;
 
 /// Stream of Witnet events
 /// This function returns a future which has a nested future inside.

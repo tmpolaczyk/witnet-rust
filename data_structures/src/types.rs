@@ -1,11 +1,12 @@
 use std::fmt;
 
+use serde::{Deserialize, Serialize};
+
 use crate::{
     chain::{Block, CheckpointBeacon, Hashable, InventoryEntry, SuperBlock, SuperBlockVote},
     proto::{schema::witnet, ProtobufConvert},
     transaction::Transaction,
 };
-use serde::{Deserialize, Serialize};
 
 /// Witnet's protocol messages
 #[derive(Debug, Eq, PartialEq, Clone, ProtobufConvert)]

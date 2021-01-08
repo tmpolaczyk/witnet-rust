@@ -1,6 +1,7 @@
 //! Message handlers for `RadManager`
 
 use actix::{Handler, Message, ResponseFuture};
+use futures::FutureExt;
 use witnet_data_structures::radon_report::{RadonReport, ReportContext};
 use witnet_rad::{error::RadError, script::RadonScriptExecutionSettings, types::RadonTypes};
 use witnet_validations::validations::{
@@ -8,10 +9,8 @@ use witnet_validations::validations::{
     TallyPreconditionClauseResult,
 };
 
-use crate::actors::messages::{ResolveRA, RunTally};
-
 use super::RadManager;
-use futures::FutureExt;
+use crate::actors::messages::{ResolveRA, RunTally};
 
 impl Handler<ResolveRA> for RadManager {
     type Result = ResponseFuture<Result<RadonReport<RadonTypes>, RadError>>;

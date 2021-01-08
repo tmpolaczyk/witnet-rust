@@ -2,9 +2,7 @@
 
 use futures::{executor::block_on, future::join_all};
 use serde::Serialize;
-pub use serde_cbor::to_vec as cbor_to_vec;
-pub use serde_cbor::Value as CborValue;
-
+pub use serde_cbor::{to_vec as cbor_to_vec, Value as CborValue};
 use witnet_data_structures::{
     chain::{RADAggregate, RADRequest, RADRetrieve, RADTally, RADType},
     radon_report::{RadonReport, ReportContext, RetrievalMetadata, Stage, TallyMetaData},
@@ -306,20 +304,18 @@ mod tests {
     use std::convert::TryFrom;
 
     use serde_cbor::Value;
-
     use witnet_data_structures::{
         chain::RADFilter,
         radon_error::{RadonError, RadonErrors},
     };
 
+    use super::*;
     use crate::{
         filters::RadonFilters,
         operators::RadonOpCodes,
         reducers::RadonReducers,
         types::{float::RadonFloat, integer::RadonInteger},
     };
-
-    use super::*;
 
     #[test]
     fn test_run_retrieval() {
@@ -936,6 +932,7 @@ mod tests {
     #[test]
     fn compare_zero_int_and_zero_error() {
         use std::convert::TryFrom;
+
         use witnet_data_structures::radon_report::TypeLike;
 
         // RadonInteger with value 0

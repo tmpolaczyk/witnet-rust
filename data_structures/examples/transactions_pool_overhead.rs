@@ -1,11 +1,13 @@
 use rand::{thread_rng, Rng};
-use witnet_data_structures::chain::{
-    DataRequestOutput, Hash, Input, KeyedSignature, OutputPointer, PublicKeyHash, RADAggregate,
-    RADRequest, RADRetrieve, RADTally, RADType, Secp256k1Signature, Signature, TransactionsPool,
-    ValueTransferOutput,
-};
-use witnet_data_structures::transaction::{
-    DRTransaction, DRTransactionBody, Transaction, VTTransaction, VTTransactionBody,
+use witnet_data_structures::{
+    chain::{
+        DataRequestOutput, Hash, Input, KeyedSignature, OutputPointer, PublicKeyHash, RADAggregate,
+        RADRequest, RADRetrieve, RADTally, RADType, Secp256k1Signature, Signature,
+        TransactionsPool, ValueTransferOutput,
+    },
+    transaction::{
+        DRTransaction, DRTransactionBody, Transaction, VTTransaction, VTTransactionBody,
+    },
 };
 
 fn random_request() -> RADRequest {

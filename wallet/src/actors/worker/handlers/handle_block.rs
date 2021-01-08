@@ -1,8 +1,8 @@
+use std::sync::Arc;
+
 use actix::{Handler, Message};
 
-use crate::actors::worker;
-use crate::types;
-use std::sync::Arc;
+use crate::{actors::worker, types};
 
 pub struct HandleBlockRequest {
     pub block: Arc<types::ChainBlock>,

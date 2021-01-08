@@ -5,7 +5,6 @@ use std::{
 };
 
 use serde_cbor::value::{from_value, Value};
-
 use witnet_data_structures::radon_report::{RadonReport, ReportContext, Stage};
 
 use crate::{
@@ -361,8 +360,9 @@ mod tests {
 
     use witnet_data_structures::radon_report::RetrievalMetadata;
 
-    use crate::error::RadError;
+    use super::*;
     use crate::{
+        error::RadError,
         operators::RadonOpCodes::{
             IntegerGreaterThan, IntegerMultiply, MapGetFloat, MapGetInteger, MapGetString,
         },
@@ -371,8 +371,6 @@ mod tests {
             RadonTypes,
         },
     };
-
-    use super::*;
 
     #[test]
     fn test_array_count() {

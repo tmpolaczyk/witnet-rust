@@ -5,11 +5,12 @@ use std::convert::TryFrom;
 use failure::{self, Fail};
 use serde::{Serialize, Serializer};
 use serde_cbor::value::Value as SerdeCborValue;
-
 use witnet_data_structures::radon_error::{ErrorLike, RadonError, RadonErrors};
 
-use crate::types::RadonTypes;
-use crate::{operators::RadonOpCodes, types::array::RadonArray};
+use crate::{
+    operators::RadonOpCodes,
+    types::{array::RadonArray, RadonTypes},
+};
 
 /// RAD errors.
 #[derive(Clone, Debug, Fail, PartialEq)]

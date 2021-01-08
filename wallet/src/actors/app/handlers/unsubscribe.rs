@@ -1,7 +1,6 @@
 use actix::prelude::*;
 
-use crate::actors::app;
-use crate::types;
+use crate::{actors::app, types};
 
 pub struct UnsubscribeRequest(pub types::SubscriptionId);
 

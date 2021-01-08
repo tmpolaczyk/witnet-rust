@@ -1,8 +1,7 @@
 use actix::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::actors::app;
-use crate::{constants, model, types};
+use crate::{actors::app, constants, model, types};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GetAddressesRequest {

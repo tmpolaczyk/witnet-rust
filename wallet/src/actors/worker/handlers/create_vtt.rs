@@ -1,7 +1,6 @@
 use actix::prelude::*;
 
-use crate::actors::worker;
-use crate::types;
+use crate::{actors::worker, types};
 
 pub struct CreateVtt {
     pub wallet: types::SessionWallet,

@@ -1,11 +1,10 @@
-use itertools::Itertools;
 use std::{
     collections::HashSet,
     convert::TryFrom,
     sync::atomic::{AtomicU32, Ordering},
 };
 
-use crate::validations::*;
+use itertools::Itertools;
 use witnet_crypto::{
     key::CryptoEngine,
     secp256k1::{PublicKey as Secp256k1_PublicKey, Secp256k1, SecretKey as Secp256k1_SecretKey},
@@ -32,6 +31,8 @@ use witnet_rad::{
     reducers::RadonReducers,
     types::{integer::RadonInteger, RadonTypes},
 };
+
+use crate::validations::*;
 
 static ONE_WIT: u64 = 1_000_000_000;
 const MAX_VT_WEIGHT: u32 = 20_000;
@@ -2872,10 +2873,7 @@ fn commitment_collateral_zero_value_output() {
 
     let err = x.unwrap_err().downcast::<TransactionError>().unwrap();
     assert!(
-        matches!(
-            err,
-            TransactionError::ZeroValueOutput { output_id: 0, .. }
-        ),
+        matches!(err, TransactionError::ZeroValueOutput { output_id: 0, .. }),
         "assertion failed: `(left == right)`\n  left: `{:?}`,\n right: `ZeroValueOutput`",
         err
     );

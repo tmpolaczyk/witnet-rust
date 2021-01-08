@@ -1,7 +1,6 @@
 use failure::Fail;
 use jsonrpc_core as rpc;
 use serde_json::json;
-
 use witnet_net::client::tcp;
 
 use crate::{actors, crypto, repository};

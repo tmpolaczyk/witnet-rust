@@ -5,25 +5,30 @@
 //! https://github.com/actix/actix/issues/451
 //!
 //! DNS resolver and connector utility actor
-use std::collections::VecDeque;
-use std::fmt;
-use std::future::Future;
-use std::io;
-use std::net::SocketAddr;
-use std::pin::Pin;
-use std::task::{self, Poll};
-use std::time::Duration;
+use std::{
+    collections::VecDeque,
+    fmt,
+    future::Future,
+    io,
+    net::SocketAddr,
+    pin::Pin,
+    task::{self, Poll},
+    time::Duration,
+};
 
+use actix::{
+    clock::Sleep,
+    fut::{ActorFuture, Either},
+    prelude::*,
+};
 use pin_project_lite::pin_project;
 use tokio::net::TcpStream;
-use trust_dns_resolver::config::{ResolverConfig, ResolverOpts};
-use trust_dns_resolver::TokioAsyncResolver as AsyncResolver;
-use trust_dns_resolver::{error::ResolveError, lookup_ip::LookupIp};
-
-use actix::clock::Sleep;
-use actix::fut::ActorFuture;
-use actix::fut::Either;
-use actix::prelude::*;
+use trust_dns_resolver::{
+    config::{ResolverConfig, ResolverOpts},
+    error::ResolveError,
+    lookup_ip::LookupIp,
+    TokioAsyncResolver as AsyncResolver,
+};
 
 #[deprecated(since = "0.7.0", note = "please use `Resolver` instead")]
 pub type Connector = Resolver;

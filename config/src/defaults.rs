@@ -2,10 +2,12 @@
 //!
 //! This module contains per-environment default values for the Witnet
 //! protocol params.
-use std::collections::HashSet;
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-use std::path::PathBuf;
-use std::time::Duration;
+use std::{
+    collections::HashSet,
+    net::{IpAddr, Ipv4Addr, SocketAddr},
+    path::PathBuf,
+    time::Duration,
+};
 
 use witnet_crypto::hash::HashFunction;
 use witnet_data_structures::chain::Hash;

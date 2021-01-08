@@ -39,20 +39,20 @@
 //! // Config::from_partial(&PartialConfig::default_mainnet());
 //! ```
 use std::{
-    collections::HashSet, fmt, marker::PhantomData, net::SocketAddr, path::PathBuf, time::Duration,
+    collections::HashSet, convert::TryFrom, fmt, marker::PhantomData, net::SocketAddr,
+    path::PathBuf, time::Duration,
 };
 
+use partial_struct::PartialStruct;
 use serde::{de, Deserialize, Deserializer, Serialize};
+use witnet_crypto::hash::HashFunction;
+use witnet_data_structures::chain::{ConsensusConstants, Environment, PartialConsensusConstants};
+use witnet_protected::{Protected, ProtectedString};
 
 use crate::{
     defaults::{Defaults, Development, Mainnet, Testnet},
     dirs,
 };
-use partial_struct::PartialStruct;
-use std::convert::TryFrom;
-use witnet_crypto::hash::HashFunction;
-use witnet_data_structures::chain::{ConsensusConstants, Environment, PartialConsensusConstants};
-use witnet_protected::{Protected, ProtectedString};
 
 /// The total configuration object that contains all other, more
 /// specific, configuration objects (connections, storage, etc).

@@ -1,4 +1,5 @@
 use actix::{Context, Handler};
+use witnet_util::timestamp::get_timestamp;
 
 use super::PeersManager;
 use crate::actors::messages::{
@@ -6,7 +7,6 @@ use crate::actors::messages::{
     InitializePeers, PeersNewTried, PeersSocketAddrResult, PeersSocketAddrsResult,
     RemoveAddressesFromTried, RequestPeers,
 };
-use witnet_util::timestamp::get_timestamp;
 
 /// Handler for AddPeers message
 impl Handler<AddPeers> for PeersManager {

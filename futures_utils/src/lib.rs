@@ -8,9 +8,10 @@
 //! https://github.com/actix/actix/blob/fdaa5d50e25ffc892f5c1c6fcc51097796debecf/src/fut/map.rs
 //! https://github.com/actix/actix/blob/fdaa5d50e25ffc892f5c1c6fcc51097796debecf/src/fut/then.rs
 
+use std::{future::Future, pin::Pin, task, task::Poll};
+
 use actix::{fut::IntoActorFuture, Actor, ActorFuture};
 use pin_project_lite::pin_project;
-use std::{future::Future, pin::Pin, task, task::Poll};
 
 /// `ActorFuture` helpers
 pub trait ActorFutureExt: ActorFuture {

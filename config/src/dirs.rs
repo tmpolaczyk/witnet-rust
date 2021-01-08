@@ -1,7 +1,6 @@
 //! Platform-specific application paths.
 
-use std::env;
-use std::path::PathBuf;
+use std::{env, path::PathBuf};
 
 /// Find a configuration from standard paths.
 ///

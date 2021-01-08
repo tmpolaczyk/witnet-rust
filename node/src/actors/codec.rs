@@ -1,10 +1,7 @@
-use std::convert::TryFrom;
-use std::io;
-use std::io::Cursor;
-
-use byteorder::{BigEndian, ReadBytesExt};
+use std::{convert::TryFrom, io, io::Cursor};
 
 use actix::Message;
+use byteorder::{BigEndian, ReadBytesExt};
 use bytes::{Buf, BufMut, BytesMut};
 use tokio_util::codec::{Decoder, Encoder};
 

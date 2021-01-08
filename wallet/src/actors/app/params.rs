@@ -2,9 +2,8 @@ use std::{net::SocketAddr, sync::Arc, time::Duration};
 
 use witnet_net::client::tcp::JsonRpcClient;
 
-use crate::actors;
-
 use super::*;
+use crate::actors;
 
 pub struct Params {
     pub testnet: bool,

@@ -1,6 +1,8 @@
-use super::*;
 use std::sync::Arc;
+
 use witnet_data_structures::chain::EpochConstants;
+
+use super::*;
 
 /// Wallet state snapshot after indexing a block
 #[derive(Clone, Debug)]

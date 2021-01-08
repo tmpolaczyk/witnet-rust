@@ -1,7 +1,6 @@
-use crate::model;
-use crate::types::*;
-use std::fmt;
-use std::marker::PhantomData;
+use std::{fmt, marker::PhantomData};
+
+use crate::{model, types::*};
 
 /// Type-safe database key.
 ///

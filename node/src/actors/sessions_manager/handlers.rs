@@ -10,6 +10,11 @@ use actix::{
 };
 use ansi_term::Color::Cyan;
 use tokio_util::codec::FramedRead;
+use witnet_p2p::{
+    error::SessionsError,
+    sessions::{ip_range_string, SessionType},
+};
+use witnet_util::timestamp::{duration_until_timestamp, get_timestamp};
 
 use super::{NotSendingPeersBeaconsBecause, SessionsManager};
 use crate::actors::{
@@ -24,11 +29,6 @@ use crate::actors::{
     peers_manager::PeersManager,
     session::Session,
 };
-use witnet_p2p::{
-    error::SessionsError,
-    sessions::{ip_range_string, SessionType},
-};
-use witnet_util::timestamp::{duration_until_timestamp, get_timestamp};
 
 /// Handler for Create message.
 impl Handler<Create> for SessionsManager {

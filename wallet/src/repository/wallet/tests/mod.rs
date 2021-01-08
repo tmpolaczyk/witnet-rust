@@ -1,10 +1,11 @@
 use std::{collections::HashMap, iter::FromIterator as _, mem};
 
+use witnet_data_structures::{transaction::VTTransaction, transaction_factory::calculate_weight};
+
 use super::*;
 use crate::{
     db::HashMapDb, repository::wallet::tests::factories::vtt_from_body, types::Hashable, *,
 };
-use witnet_data_structures::{transaction::VTTransaction, transaction_factory::calculate_weight};
 
 mod factories;
 

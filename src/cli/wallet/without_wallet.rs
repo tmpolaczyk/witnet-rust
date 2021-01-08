@@ -1,5 +1,4 @@
 use structopt::StructOpt;
-
 use witnet_config::config::Config;
 
 pub fn exec_cmd(_command: Command, _config: Config) -> Result<(), failure::Error> {

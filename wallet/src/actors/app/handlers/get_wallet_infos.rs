@@ -2,8 +2,7 @@ use actix::prelude::*;
 use futures::FutureExt;
 use serde::{Deserialize, Serialize};
 
-use crate::actors::app;
-use crate::model;
+use crate::{actors::app, model};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct WalletInfosRequest;

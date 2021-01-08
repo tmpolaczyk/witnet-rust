@@ -18,7 +18,6 @@
 use failure::Error;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-
 use witnet_protected::ProtectedString;
 
 /// BIP39 Mnemonic

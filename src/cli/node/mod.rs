@@ -7,6 +7,5 @@ mod without_node;
 
 #[cfg(feature = "node")]
 pub use with_node::*;
-
 #[cfg(not(feature = "node"))]
 pub use without_node::*;

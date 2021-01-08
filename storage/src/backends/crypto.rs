@@ -2,9 +2,10 @@
 //!
 //! High-order storage backend that hashes the key and
 //! encrypts/decrypts the value when putting/getting it.
-use crate::storage::{Result, Storage};
 use witnet_crypto::{cipher, hash::calculate_sha256, pbkdf2::pbkdf2_sha256};
 use witnet_protected::Protected;
+
+use crate::storage::{Result, Storage};
 
 const IV_LENGTH: usize = 16;
 const SALT_LENGTH: usize = 32;

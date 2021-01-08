@@ -1,7 +1,10 @@
-use std::convert::{TryFrom, TryInto};
-use std::fmt;
+use std::{
+    convert::{TryFrom, TryInto},
+    fmt,
+};
 
 use serde_cbor::value::{from_value, Value};
+use witnet_data_structures::radon_report::ReportContext;
 
 use crate::{
     error::RadError,
@@ -9,7 +12,6 @@ use crate::{
     script::RadonCall,
     types::{RadonType, RadonTypes},
 };
-use witnet_data_structures::radon_report::ReportContext;
 
 const RADON_BOOLEAN_TYPE_NAME: &str = "RadonBoolean";
 

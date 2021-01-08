@@ -1,12 +1,10 @@
 //! Periodically check the state of the requests in the WRB
 
-use crate::actors::ClaimMsg;
-use crate::eth::DrState;
-use crate::{config::Config, eth::EthState};
+use std::sync::Arc;
+
 use async_jsonrpc_client::futures::Stream;
 use ethabi::Bytes;
 use futures::{future::Either, sink::Sink};
-use std::sync::Arc;
 use tokio::sync::mpsc;
 use web3::{
     contract,
@@ -15,6 +13,12 @@ use web3::{
 };
 use witnet_crypto::hash::calculate_sha256;
 use witnet_data_structures::chain::Hash;
+
+use crate::{
+    actors::ClaimMsg,
+    config::Config,
+    eth::{DrState, EthState},
+};
 
 /// Check for new requests in the WRB
 pub fn get_new_requests(

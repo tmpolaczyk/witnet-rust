@@ -6,9 +6,11 @@ use witnet_p2p::peers::{
 
 /// Tests for the business logic of inserting and removing peer addresses into the `ice` bucket.
 mod ice {
-    use super::ip;
     use std::time::Duration;
+
     use witnet_p2p::peers::Peers;
+
+    use super::ip;
 
     #[test]
     fn test_can_ice_an_address() {

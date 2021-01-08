@@ -1,6 +1,5 @@
 //! Websockets server implementation.
-use std::net;
-use std::sync::Arc;
+use std::{net, sync::Arc};
 
 use jsonrpc_pubsub as pubsub;
 use jsonrpc_ws_server as server;

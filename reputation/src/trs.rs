@@ -11,9 +11,10 @@ use std::{
     ops::{AddAssign, SubAssign},
 };
 
-use crate::error::{NonSortedAlpha, RepError};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+
+use crate::error::{NonSortedAlpha, RepError};
 
 /// Total Reputation Set
 ///

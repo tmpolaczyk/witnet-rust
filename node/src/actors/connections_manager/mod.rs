@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 
 use actix::prelude::*;
 use tokio::net::{TcpListener, TcpStream};
-
+use witnet_futures_utils::ActorFutureExt;
 use witnet_p2p::sessions::SessionType;
 
 use crate::{
@@ -13,7 +13,6 @@ use crate::{
     },
     config_mngr,
 };
-use witnet_futures_utils::ActorFutureExt;
 
 mod actor;
 mod handlers;

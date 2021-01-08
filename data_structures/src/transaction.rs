@@ -1,4 +1,11 @@
+use std::{
+    convert::TryFrom,
+    sync::{Arc, RwLock},
+};
+
+use protobuf::Message;
 use serde::{Deserialize, Serialize};
+use witnet_crypto::{hash::calculate_sha256, merkle::FullMerkleTree};
 
 use crate::{
     chain::{
@@ -8,10 +15,6 @@ use crate::{
     proto::{schema::witnet, ProtobufConvert},
     vrf::DataRequestEligibilityClaim,
 };
-use protobuf::Message;
-use std::convert::TryFrom;
-use std::sync::{Arc, RwLock};
-use witnet_crypto::{hash::calculate_sha256, merkle::FullMerkleTree};
 
 // These constants were calculated in:
 // TODO: add link to WIP about transaction weights

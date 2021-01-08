@@ -1,7 +1,5 @@
 //! Library for managing a list of available peers
 
-use rand::{thread_rng, Rng};
-use serde::{Deserialize, Serialize};
 use std::{
     cmp,
     collections::HashMap,
@@ -11,7 +9,8 @@ use std::{
     time::Duration,
 };
 
-use rand::seq::IteratorRandom;
+use rand::{seq::IteratorRandom, thread_rng, Rng};
+use serde::{Deserialize, Serialize};
 use witnet_config::config::Config;
 use witnet_crypto::hash::calculate_sha256;
 use witnet_util::timestamp::get_timestamp;

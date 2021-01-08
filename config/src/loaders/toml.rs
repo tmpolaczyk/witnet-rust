@@ -2,8 +2,7 @@
 
 #[cfg(test)]
 use std::cell::Cell;
-use std::io;
-use std::path::Path;
+use std::{io, path::Path};
 
 use failure::Fail;
 pub use toml::to_string;
@@ -36,8 +35,7 @@ pub fn from_file<S: AsRef<Path>>(file: S) -> Result<PartialConfig, Error> {
 
 #[cfg(not(test))]
 fn read_file_contents(file: &Path, contents: &mut String) -> io::Result<usize> {
-    use std::fs::File;
-    use std::io::Read;
+    use std::{fs::File, io::Read};
 
     let mut file = File::open(file)?;
     file.read_to_string(contents)
@@ -62,9 +60,11 @@ fn read_file_contents(_filename: &Path, contents: &mut String) -> io::Result<usi
 
 #[cfg(test)]
 mod tests {
-    use crate::config::*;
     use std::path::{Path, PathBuf};
+
     use witnet_data_structures::chain::Environment;
+
+    use crate::config::*;
 
     #[test]
     fn test_load_empty_config() {

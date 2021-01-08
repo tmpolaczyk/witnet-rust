@@ -1,7 +1,4 @@
-use witnet_data_structures::{
-    proto::ProtobufConvert,
-    {chain::*, types::*},
-};
+use witnet_data_structures::{chain::*, proto::ProtobufConvert, types::*};
 
 const EXAMPLE_BLOCK_VECTOR: &[u8] = &[
     8, 1, 18, 161, 5, 42, 158, 5, 10, 172, 2, 18, 36, 18, 34, 10, 32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,

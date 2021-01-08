@@ -1,7 +1,6 @@
 use actix::prelude::*;
 
-use crate::actors::app;
-use crate::types;
+use crate::{actors::app, types};
 
 pub struct NextSubscriptionId(pub types::SessionId);
 

@@ -1,8 +1,9 @@
-use serde_cbor::value::{from_value, Value};
 use std::{
     convert::{TryFrom, TryInto},
     str::FromStr,
 };
+
+use serde_cbor::value::{from_value, Value};
 
 use crate::{
     error::RadError,
@@ -160,9 +161,10 @@ fn json_to_cbor(value: &json::JsonValue) -> Value {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::{BTreeMap, HashMap};
+
     use super::*;
     use crate::types::{array::RadonArray, bytes::RadonBytes};
-    use std::collections::{BTreeMap, HashMap};
 
     #[test]
     fn test_parse_json_map() {

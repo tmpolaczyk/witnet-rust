@@ -1,19 +1,21 @@
 //! Periodically check for blocks in block relay
 
-use crate::{config::Config, eth::EthState};
-use async_jsonrpc_client::futures::Stream;
-use futures::{future::Either, sink::Sink, sync::oneshot};
 use std::{
     collections::HashMap,
     sync::Arc,
     time::{Duration, Instant},
 };
+
+use async_jsonrpc_client::futures::Stream;
+use futures::{future::Either, sink::Sink, sync::oneshot};
 use tokio::{sync::mpsc, timer::Interval};
 use web3::{
     contract,
     futures::{future, Future},
     types::U256,
 };
+
+use crate::{config::Config, eth::EthState};
 
 /// Periodically check for blocks in block relay.
 /// Users can send a message consisting of (block_hash, oneshot_tx) and when

@@ -1,5 +1,4 @@
 use actix::Handler;
-
 use witnet_data_structures::chain::Epoch;
 
 use super::EpochManager;

@@ -3,17 +3,12 @@
 //! This module provides a Signature Manager, which, after being
 //! initialized with a key, can be used repeatedly to sign data with
 //! that key.
+use std::path::PathBuf;
+
 use actix::prelude::*;
 use failure::{bail, format_err};
 use futures_util::FutureExt;
-
-use crate::{
-    actors::storage_keys::{BN256_SECRET_KEY, MASTER_KEY},
-    config_mngr, storage_mngr,
-};
-
 use rand::{thread_rng, Rng};
-use std::path::PathBuf;
 use witnet_crypto::{
     key::{CryptoEngine, ExtendedPK, ExtendedSK, MasterKeyGen, SignEngine},
     mnemonic::MnemonicGen,
@@ -30,6 +25,11 @@ use witnet_data_structures::{
 use witnet_futures_utils::{ActorFutureExt, TryFutureExt2};
 use witnet_protected::ProtectedString;
 use witnet_validations::validations;
+
+use crate::{
+    actors::storage_keys::{BN256_SECRET_KEY, MASTER_KEY},
+    config_mngr, storage_mngr,
+};
 
 /// Sign a transaction using this node's private key.
 /// This function assumes that all the inputs have the same public key hash:

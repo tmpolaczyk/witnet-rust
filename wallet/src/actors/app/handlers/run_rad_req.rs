@@ -2,8 +2,7 @@ use actix::prelude::*;
 use futures::FutureExt;
 use serde::{Deserialize, Serialize};
 
-use crate::actors::app;
-use crate::types;
+use crate::{actors::app, types};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RunRadReqRequest {

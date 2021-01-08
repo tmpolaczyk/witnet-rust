@@ -1,7 +1,6 @@
 use std::net::SocketAddr;
 
 use structopt::StructOpt;
-
 use witnet_config::{config::Config, loaders};
 use witnet_wallet as wallet;
 

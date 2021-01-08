@@ -1,7 +1,7 @@
 use failure::Fail;
+use witnet_data_structures::error::TransactionError;
 
 use crate::{crypto, db, types};
-use witnet_data_structures::error::TransactionError;
 
 #[derive(Debug, Fail)]
 #[fail(display = "Database Error")]

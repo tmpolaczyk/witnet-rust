@@ -10,8 +10,10 @@
 #![deny(unused_mut)]
 #![deny(missing_docs)]
 
-use std::ops::{Deref, DerefMut};
-use std::str;
+use std::{
+    ops::{Deref, DerefMut},
+    str,
+};
 
 use memzero::Memzero;
 

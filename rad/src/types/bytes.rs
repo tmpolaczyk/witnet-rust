@@ -1,15 +1,17 @@
+use std::{
+    convert::{TryFrom, TryInto},
+    fmt,
+};
+
+use serde_cbor::value::Value;
+use witnet_data_structures::radon_report::ReportContext;
+
 use crate::{
     error::RadError,
     operators::{bytes as bytes_operators, identity, Operable, RadonOpCodes},
     script::RadonCall,
     types::{RadonType, RadonTypes},
 };
-use serde_cbor::value::Value;
-use std::{
-    convert::{TryFrom, TryInto},
-    fmt,
-};
-use witnet_data_structures::radon_report::ReportContext;
 
 const RADON_BYTES_TYPE_NAME: &str = "RadonBytes";
 

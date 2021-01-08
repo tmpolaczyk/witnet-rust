@@ -4,15 +4,16 @@ mod plain;
 #[cfg(test)]
 mod tests;
 
+pub use std::borrow::Borrow;
 use std::fmt::Debug;
 
-pub use crate::repository::keys::Key;
 pub use encrypted::*;
 pub use error::Error;
 pub use plain::*;
-pub use std::borrow::Borrow;
 #[cfg(test)]
 pub use tests::*;
+
+pub use crate::repository::keys::Key;
 
 pub type Result<T> = std::result::Result<T, Error>;
 

@@ -1,15 +1,14 @@
-use std::convert::TryFrom;
 use std::{
     collections::HashMap,
+    convert::TryFrom,
     sync::{Arc, Mutex, RwLock},
 };
 
 use witnet_data_structures::chain::StateMachine;
 use witnet_net::client::tcp::jsonrpc::Subscribe;
 
-use crate::types::SubscriptionId;
-
 use super::*;
+use crate::types::SubscriptionId;
 
 /// Struct to manage the App actor state and its invariants.
 #[derive(Default)]

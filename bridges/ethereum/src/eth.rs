@@ -1,13 +1,15 @@
-use crate::{config::Config, multibimap::MultiBiMap};
+use std::collections::{HashMap, HashSet};
+
 use ethabi::Bytes;
 use futures::Future;
 use futures_locks::RwLock;
-use std::collections::{HashMap, HashSet};
 use web3::{
     contract::Contract,
     types::{H160, H256, U256},
 };
 use witnet_data_structures::chain::Hash;
+
+use crate::{config::Config, multibimap::MultiBiMap};
 
 /// State of a data request in the WRB contract, including local intermediate states
 #[derive(Debug)]

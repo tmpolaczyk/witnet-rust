@@ -1,4 +1,3 @@
-use itertools::Itertools;
 use std::{
     cmp::min,
     collections::HashMap,
@@ -9,6 +8,7 @@ use std::{
 };
 
 use bech32::ToBase32;
+use itertools::Itertools;
 use state::State;
 use witnet_crypto::hash::calculate_sha256;
 use witnet_data_structures::{
@@ -23,6 +23,7 @@ use witnet_data_structures::{
 };
 use witnet_util::timestamp::get_timestamp;
 
+use super::*;
 use crate::{
     constants, crypto,
     db::{Database, WriteBatch as _},
@@ -30,8 +31,6 @@ use crate::{
     params::Params,
     types::{self, signature, Hash, Hashable as _, RadonError},
 };
-
-use super::*;
 
 mod state;
 #[cfg(test)]

@@ -1,8 +1,7 @@
 use actix::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::actors::app;
-use crate::{model, types};
+use crate::{actors::app, model, types};
 
 /// Request to sign strings after being hashed with SHA256.
 /// If `extended_pk` flag is set to true, extended public key will be include (`chaincode`).

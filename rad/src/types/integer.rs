@@ -5,6 +5,7 @@ use std::{
 };
 
 use serde_cbor::value::Value;
+use witnet_data_structures::radon_report::ReportContext;
 
 use crate::{
     error::RadError,
@@ -12,7 +13,6 @@ use crate::{
     script::RadonCall,
     types::{RadonType, RadonTypes},
 };
-use witnet_data_structures::radon_report::ReportContext;
 
 const RADON_INTEGER_TYPE_NAME: &str = "RadonInteger";
 

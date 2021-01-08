@@ -1,7 +1,8 @@
-use crate::actors::app;
-use crate::*;
-use bech32::ToBase32;
 use std::string::ToString;
+
+use bech32::ToBase32;
+
+use crate::{actors::app, *};
 
 #[test]
 fn test_validate_mnemonics() {

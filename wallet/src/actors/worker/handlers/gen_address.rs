@@ -1,7 +1,6 @@
 use actix::prelude::*;
 
-use crate::actors::worker;
-use crate::{model, types};
+use crate::{actors::worker, model, types};
 
 pub struct GenAddress {
     pub wallet: types::SessionWallet,

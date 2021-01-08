@@ -4,7 +4,6 @@ use std::{
 };
 
 use serde_cbor::value::{from_value, Value};
-
 use witnet_data_structures::radon_report::ReportContext;
 
 use crate::{

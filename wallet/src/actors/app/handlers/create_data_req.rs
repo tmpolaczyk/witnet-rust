@@ -1,5 +1,7 @@
 use actix::prelude::*;
 use serde::{Deserialize, Serialize};
+use witnet_data_structures::{chain::DataRequestOutput, transaction_factory::FeeType};
+use witnet_futures_utils::ActorFutureExt;
 
 use crate::{
     actors::app,
@@ -8,8 +10,6 @@ use crate::{
         DataRequestOutputHelper, Hashable as _, ProtobufConvert as _, TransactionHelper,
     },
 };
-use witnet_data_structures::{chain::DataRequestOutput, transaction_factory::FeeType};
-use witnet_futures_utils::ActorFutureExt;
 
 #[derive(Debug, Deserialize)]
 pub struct CreateDataReqRequest {

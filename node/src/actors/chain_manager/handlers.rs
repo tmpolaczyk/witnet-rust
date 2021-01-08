@@ -1,9 +1,12 @@
-use actix::{fut::WrapFuture, prelude::*};
 use std::{
-    collections::BTreeMap, collections::HashSet, convert::TryFrom, future, net::SocketAddr,
+    collections::{BTreeMap, HashSet},
+    convert::TryFrom,
+    future,
+    net::SocketAddr,
     time::Duration,
 };
 
+use actix::{fut::WrapFuture, prelude::*};
 use witnet_data_structures::{
     chain::{
         Block, ChainState, CheckpointBeacon, DataRequestInfo, Epoch, Hash, Hashable, NodeStats,

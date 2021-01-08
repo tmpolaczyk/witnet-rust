@@ -1,7 +1,8 @@
 //! Error type definitions for the reputation module.
 
-use failure::Fail;
 use std::fmt;
+
+use failure::Fail;
 
 /// The error type for operations in Reputation module
 #[derive(Debug, PartialEq, Fail)]

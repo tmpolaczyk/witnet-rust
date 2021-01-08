@@ -1,5 +1,6 @@
-use serde_cbor::value::{from_value, Value};
 use std::convert::TryInto;
+
+use serde_cbor::value::{from_value, Value};
 
 use crate::{
     error::RadError,
@@ -71,12 +72,13 @@ pub fn values(input: &RadonMap) -> RadonArray {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::types::integer::RadonInteger;
     use std::{
         collections::{HashMap, HashSet},
         convert::TryFrom,
     };
+
+    use super::*;
+    use crate::types::integer::RadonInteger;
 
     #[test]
     fn test_map_get() {

@@ -1,7 +1,7 @@
 use failure::Fail;
+use witnet_net::client::tcp;
 
 use crate::{crypto, db, repository, types};
-use witnet_net::client::tcp;
 
 #[derive(Debug, Fail)]
 #[fail(display = "error")]

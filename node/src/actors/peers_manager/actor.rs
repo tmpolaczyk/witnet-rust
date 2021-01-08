@@ -1,4 +1,6 @@
 use actix::prelude::*;
+use witnet_futures_utils::ActorFutureExt;
+use witnet_p2p::peers::Peers;
 
 use super::PeersManager;
 use crate::{
@@ -9,8 +11,6 @@ use crate::{
     },
     config_mngr, storage_mngr,
 };
-use witnet_futures_utils::ActorFutureExt;
-use witnet_p2p::peers::Peers;
 
 /// Make actor from PeersManager
 impl Actor for PeersManager {

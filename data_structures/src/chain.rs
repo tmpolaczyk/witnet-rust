@@ -1,3 +1,13 @@
+use std::{
+    cell::{Cell, RefCell},
+    cmp::Ordering,
+    collections::{BTreeMap, BTreeSet, HashMap, HashSet},
+    convert::{TryFrom, TryInto},
+    fmt,
+    ops::{AddAssign, SubAssign},
+    str::FromStr,
+};
+
 use bech32::{FromBase32, ToBase32};
 use bls_signatures_rs::{bn256, bn256::Bn256, MultiSignature};
 use failure::Fail;
@@ -8,15 +18,6 @@ use secp256k1::{
     Signature as Secp256k1_Signature,
 };
 use serde::{Deserialize, Serialize};
-use std::{
-    cell::{Cell, RefCell},
-    cmp::Ordering,
-    collections::{BTreeMap, BTreeSet, HashMap, HashSet},
-    convert::{TryFrom, TryInto},
-    fmt,
-    ops::{AddAssign, SubAssign},
-    str::FromStr,
-};
 use witnet_crypto::{
     hash::{calculate_sha256, Sha256},
     key::ExtendedSK,
@@ -25,9 +26,6 @@ use witnet_crypto::{
 use witnet_protected::Protected;
 use witnet_reputation::{ActiveReputationSet, TotalReputationSet};
 
-use crate::transaction::{
-    MemoHash, MemoizedHashable, BETA, COMMIT_WEIGHT, OUTPUT_SIZE, REVEAL_WEIGHT, TALLY_WEIGHT,
-};
 use crate::{
     chain::Signature::Secp256k1,
     data_request::DataRequestPool,
@@ -39,8 +37,9 @@ use crate::{
     proto::{schema::witnet, ProtobufConvert},
     superblock::SuperBlockState,
     transaction::{
-        CommitTransaction, DRTransaction, DRTransactionBody, Memoized, MintTransaction,
-        RevealTransaction, TallyTransaction, Transaction, TxInclusionProof, VTTransaction,
+        CommitTransaction, DRTransaction, DRTransactionBody, MemoHash, Memoized, MemoizedHashable,
+        MintTransaction, RevealTransaction, TallyTransaction, Transaction, TxInclusionProof,
+        VTTransaction, BETA, COMMIT_WEIGHT, OUTPUT_SIZE, REVEAL_WEIGHT, TALLY_WEIGHT,
     },
     utxo_pool::{OwnUnspentOutputsPool, UnspentOutputsPool},
     vrf::{BlockEligibilityClaim, DataRequestEligibilityClaim},
@@ -3789,12 +3788,13 @@ pub fn block_example() -> Block {
 
 #[cfg(test)]
 mod tests {
+    use witnet_crypto::merkle::{merkle_tree_root, InclusionProof};
+
     use super::*;
     use crate::{
         superblock::{mining_build_superblock, ARSIdentities},
         transaction::{CommitTransactionBody, RevealTransactionBody, VTTransactionBody},
     };
-    use witnet_crypto::merkle::{merkle_tree_root, InclusionProof};
 
     fn dr_root_superblock_loop_test(
         sb: SuperBlock,
@@ -4165,11 +4165,12 @@ mod tests {
 
     #[test]
     fn secp256k1_from_into_secpk256k1_signatures() {
-        use crate::chain::Secp256k1Signature;
         use secp256k1::{
             Message as Secp256k1_Message, Secp256k1, SecretKey as Secp256k1_SecretKey,
             Signature as Secp256k1_Signature,
         };
+
+        use crate::chain::Secp256k1Signature;
 
         let data = [0xab; 32];
         let secp = Secp256k1::new();
@@ -4186,11 +4187,12 @@ mod tests {
 
     #[test]
     fn secp256k1_from_into_signatures() {
-        use crate::chain::Signature;
         use secp256k1::{
             Message as Secp256k1_Message, Secp256k1, SecretKey as Secp256k1_SecretKey,
             Signature as Secp256k1_Signature,
         };
+
+        use crate::chain::Signature;
 
         let data = [0xab; 32];
         let secp = Secp256k1::new();
@@ -4207,10 +4209,11 @@ mod tests {
 
     #[test]
     fn secp256k1_from_into_public_keys() {
-        use crate::chain::PublicKey;
         use secp256k1::{
             PublicKey as Secp256k1_PublicKey, Secp256k1, SecretKey as Secp256k1_SecretKey,
         };
+
+        use crate::chain::PublicKey;
 
         let secp = Secp256k1::new();
         let secret_key =
@@ -4225,8 +4228,9 @@ mod tests {
 
     #[test]
     fn secp256k1_from_into_secret_keys() {
-        use crate::chain::SecretKey;
         use secp256k1::SecretKey as Secp256k1_SecretKey;
+
+        use crate::chain::SecretKey;
 
         let secret_key =
             Secp256k1_SecretKey::from_slice(&[0xcd; 32]).expect("32 bytes, within curve order");

@@ -1,10 +1,9 @@
 use actix::prelude::*;
-use serde::{Deserialize, Serialize};
-
-use crate::actors::app;
-use crate::types;
 use futures_util::FutureExt;
+use serde::{Deserialize, Serialize};
 use witnet_futures_utils::ActorFutureExt;
+
+use crate::{actors::app, types};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CreateMnemonicsRequest {

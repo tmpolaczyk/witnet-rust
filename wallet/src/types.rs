@@ -1,17 +1,16 @@
-use std::convert::TryFrom;
-use std::fmt;
-use std::sync::{Arc, RwLock};
-
 use core::fmt::Display;
 pub use std::str::FromStr;
+use std::{
+    convert::TryFrom,
+    fmt,
+    sync::{Arc, RwLock},
+};
 
-use crate::app::VttOutputParams;
 use failure::Fail;
 pub use jsonrpc_core::{Params as RpcParams, Value as RpcValue};
 pub use jsonrpc_pubsub::{Sink, SinkResult, Subscriber, SubscriptionId};
 use serde::{Deserialize, Deserializer, Serialize};
 pub use serde_json::Value as Json;
-
 pub use witnet_crypto::{
     hash::HashFunction,
     key::{CryptoEngine, ExtendedPK, ExtendedSK, KeyDerivationError, KeyPath, ONE_KEY, PK, SK},
@@ -36,14 +35,12 @@ pub use witnet_data_structures::{
     },
     transaction_factory::FeeType,
 };
-
 pub use witnet_net::client::tcp::jsonrpc::Request as RpcRequest;
 use witnet_protected::{Protected, ProtectedString};
 pub use witnet_rad::{error::RadError, types::RadonTypes, RADRequestExecutionReport};
 
-use crate::{model, types::signature::Signature};
-
 use super::{db, repository};
+use crate::{app::VttOutputParams, model, types::signature::Signature};
 
 pub type Password = ProtectedString;
 

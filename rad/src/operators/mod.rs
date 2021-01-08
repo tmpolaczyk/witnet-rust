@@ -2,7 +2,6 @@ use std::fmt;
 
 use num_enum::TryFromPrimitive;
 use serde::Serialize;
-
 use witnet_data_structures::radon_report::ReportContext;
 
 use crate::{error::RadError, script::RadonCall, types::RadonTypes};
@@ -146,9 +145,8 @@ pub fn identity(input: RadonTypes) -> Result<RadonTypes, RadError> {
 
 #[cfg(test)]
 mod tests {
-    use crate::types::string::RadonString;
-
     use super::*;
+    use crate::types::string::RadonString;
 
     #[test]
     pub fn test_identity() {

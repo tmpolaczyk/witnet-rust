@@ -1,17 +1,17 @@
 //! Actor which tries to claim data requests from WRB and posts them to Witnet
 
-use crate::{actors::handle_receipt, actors::ClaimMsg, config::Config, eth::EthState};
-use async_jsonrpc_client::{futures::Stream, transports::tcp::TcpSocket, Transport};
-use ethabi::{Bytes, Token};
-use futures::{future::Either, sink::Sink};
-use rand::{thread_rng, Rng};
-use serde_json::{json, Value};
 use std::{
     collections::BTreeMap,
     convert::TryFrom,
     sync::Arc,
     time::{Duration, Instant},
 };
+
+use async_jsonrpc_client::{futures::Stream, transports::tcp::TcpSocket, Transport};
+use ethabi::{Bytes, Token};
+use futures::{future::Either, sink::Sink};
+use rand::{thread_rng, Rng};
+use serde_json::{json, Value};
 use tokio::{sync::mpsc, timer::Interval};
 use web3::{contract, futures::Future, types::U256};
 use witnet_crypto::hash::{calculate_sha256, Sha256};
@@ -21,6 +21,12 @@ use witnet_data_structures::{
 };
 use witnet_util::timestamp::get_local_timestamp;
 use witnet_validations::validations::validate_rad_request;
+
+use crate::{
+    actors::{handle_receipt, ClaimMsg},
+    config::Config,
+    eth::EthState,
+};
 
 fn convert_json_array_to_eth_bytes(value: Value) -> Result<Bytes, serde_json::Error> {
     // Convert json values such as [1, 2, 3] into bytes

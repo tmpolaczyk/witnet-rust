@@ -1,7 +1,6 @@
 use actix::prelude::*;
 
-use crate::actors::worker;
-use crate::types;
+use crate::{actors::worker, types};
 
 pub struct ExportMasterKey {
     pub wallet: types::SessionWallet,

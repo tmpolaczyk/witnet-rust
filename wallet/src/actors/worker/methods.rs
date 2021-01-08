@@ -1,19 +1,22 @@
 use std::convert::TryFrom;
 
+use futures_util::compat::Compat01As03;
 use jsonrpc_core as rpc;
 use serde_json::{json, Value};
-
-use crate::types::{
-    ChainEntry, CheckpointBeacon, DynamicSink, GetBlockChainParams, Hashable, StateMachine,
-};
-use crate::{account, constants, crypto, db::Database as _, model, params};
 use witnet_crypto::key::ExtendedSK;
 use witnet_data_structures::chain::ValueTransferOutput;
 use witnet_futures_utils::TryFutureExt2;
 use witnet_rad::script::RadonScriptExecutionSettings;
 
 use super::*;
-use futures_util::compat::Compat01As03;
+use crate::{
+    account, constants, crypto,
+    db::Database as _,
+    model, params,
+    types::{
+        ChainEntry, CheckpointBeacon, DynamicSink, GetBlockChainParams, Hashable, StateMachine,
+    },
+};
 
 pub enum IndexTransactionQuery {
     InputTransactions(Vec<types::OutputPointer>),

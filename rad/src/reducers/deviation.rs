@@ -1,3 +1,5 @@
+use std::ops::Div;
+
 use crate::{
     error::RadError,
     operators::array::transpose,
@@ -7,7 +9,6 @@ use crate::{
     },
     types::{array::RadonArray, float::RadonFloat, RadonType, RadonTypes},
 };
-use std::ops::Div;
 
 /// Population standard deviation
 // FIXME: Allow for now, since there is no safe cast function from a usize to float yet
@@ -97,9 +98,10 @@ pub fn standard(input: &RadonArray) -> Result<RadonTypes, RadError> {
 
 #[cfg(test)]
 mod tests {
+    use std::convert::TryFrom;
+
     use super::*;
     use crate::types::{float::RadonFloat, integer::RadonInteger, string::RadonString};
-    use std::convert::TryFrom;
 
     #[test]
     fn test_reduce_deviation_standard_float() {

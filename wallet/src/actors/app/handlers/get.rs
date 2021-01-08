@@ -1,9 +1,8 @@
 use actix::prelude::*;
 use serde::{Deserialize, Serialize};
-
-use crate::actors::app;
-use crate::types;
 use witnet_futures_utils::ActorFutureExt;
+
+use crate::{actors::app, types};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GetRequest {

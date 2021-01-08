@@ -1,6 +1,4 @@
-use std::collections::HashMap;
-use std::fmt;
-use std::hash::Hash;
+use std::{collections::HashMap, fmt, hash::Hash};
 
 /// Bidirectional map where every L must map to exactly one R, but every R can map to multiple L.
 pub struct MultiBiMap<L: Clone + Eq + Hash, R: Clone + Eq + Hash> {

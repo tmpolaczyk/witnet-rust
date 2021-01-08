@@ -1,18 +1,18 @@
-use actix::{
-    io::FramedWrite, io::WriteHandler, Actor, ActorFuture, Addr, AsyncContext, Context,
-    ContextFutureSpawner, Running, StreamHandler, WrapFuture,
-};
+use std::{io, rc::Rc, sync::Arc};
 
+use actix::{
+    io::{FramedWrite, WriteHandler},
+    Actor, ActorFuture, Addr, AsyncContext, Context, ContextFutureSpawner, Running, StreamHandler,
+    WrapFuture,
+};
 use bytes::BytesMut;
-use std::{io, rc::Rc};
+use futures_util::compat::Compat01As03;
+use jsonrpc_pubsub::{PubSubHandler, Session};
 
 use super::{
     newline_codec::NewLineCodec,
     server::{JsonRpcServer, Unregister},
 };
-use futures_util::compat::Compat01As03;
-use jsonrpc_pubsub::{PubSubHandler, Session};
-use std::sync::Arc;
 
 /// A single JSON-RPC connection
 pub struct JsonRpc {

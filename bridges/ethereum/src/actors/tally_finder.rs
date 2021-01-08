@@ -1,18 +1,23 @@
 //! Periodically ask the Witnet node for resolved data requests
 
-use crate::actors::{SuperBlockNotification, WitnetSuperBlock};
-use crate::{config::Config, eth::EthState};
-use async_jsonrpc_client::{futures::Stream, transports::tcp::TcpSocket, Transport};
-use futures::{future::Either, sink::Sink};
-use rand::{thread_rng, Rng};
-use serde_json::json;
 use std::{
     sync::Arc,
     time::{Duration, Instant},
 };
+
+use async_jsonrpc_client::{futures::Stream, transports::tcp::TcpSocket, Transport};
+use futures::{future::Either, sink::Sink};
+use rand::{thread_rng, Rng};
+use serde_json::json;
 use tokio::{sync::mpsc, timer::Interval};
 use web3::futures::Future;
-use witnet_data_structures::{chain::Block, chain::DataRequestInfo};
+use witnet_data_structures::chain::{Block, DataRequestInfo};
+
+use crate::{
+    actors::{SuperBlockNotification, WitnetSuperBlock},
+    config::Config,
+    eth::EthState,
+};
 
 /// Periodically ask the Witnet node for resolved data requests
 pub fn tally_finder(

@@ -3,7 +3,7 @@ use std::{net::SocketAddr, time::Duration};
 use actix::{
     ActorFuture, AsyncContext, Context, ContextFutureSpawner, Supervised, SystemService, WrapFuture,
 };
-
+use witnet_config::config::Config;
 use witnet_p2p::{peers::Peers, sessions::SessionType};
 use witnet_util::timestamp::get_timestamp;
 
@@ -15,7 +15,6 @@ use crate::{
     },
     storage_mngr,
 };
-use witnet_config::config::Config;
 
 // Internal Actor implementation for PeersManager
 mod actor;

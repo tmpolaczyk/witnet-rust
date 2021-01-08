@@ -5,7 +5,6 @@ use std::{
 };
 
 use serde_cbor::value::{from_value, to_value, Value};
-
 use witnet_data_structures::radon_report::ReportContext;
 
 use crate::{
@@ -168,9 +167,8 @@ impl Operable for RadonMap {
 mod tests {
     use witnet_data_structures::radon_report::TypeLike;
 
-    use crate::types::integer::RadonInteger;
-
     use super::*;
+    use crate::types::integer::RadonInteger;
 
     #[test]
     fn test_operate_identity() {

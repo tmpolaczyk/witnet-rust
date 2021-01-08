@@ -1,9 +1,10 @@
-use super::SessionsManager;
-use crate::config_mngr;
 use actix::prelude::*;
 use witnet_data_structures::chain::EpochConstants;
 use witnet_futures_utils::ActorFutureExt;
 use witnet_util::timestamp::get_timestamp;
+
+use super::SessionsManager;
+use crate::config_mngr;
 
 /// Make actor from `SessionsManager`
 impl Actor for SessionsManager {

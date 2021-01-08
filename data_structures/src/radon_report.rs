@@ -1,5 +1,7 @@
-use std::convert::TryFrom;
-use std::time::{Duration, SystemTime};
+use std::{
+    convert::TryFrom,
+    time::{Duration, SystemTime},
+};
 
 use serde::Serialize;
 
@@ -317,9 +319,8 @@ mod tests {
     use failure::Fail;
     use serde_cbor::Value as SerdeCborValue;
 
-    use crate::radon_error::{ErrorLike, RadonError, RadonErrors};
-
     use super::*;
+    use crate::radon_error::{ErrorLike, RadonError, RadonErrors};
 
     #[derive(Clone)]
     struct DummyType;

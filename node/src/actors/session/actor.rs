@@ -2,9 +2,10 @@ use actix::{
     Actor, ActorContext, ActorFuture, AsyncContext, Context, ContextFutureSpawner, Running,
     SystemService, WrapFuture,
 };
-
 use witnet_data_structures::types::Message as WitnetMessage;
+use witnet_futures_utils::ActorFutureExt;
 use witnet_p2p::sessions::{SessionStatus, SessionType};
+use witnet_util::timestamp::pretty_print;
 
 use super::{handlers::EveryEpochPayload, Session};
 use crate::actors::{
@@ -13,8 +14,6 @@ use crate::actors::{
     messages::{AddBlocks, GetEpoch, Register, Subscribe, Unregister},
     sessions_manager::SessionsManager,
 };
-use witnet_futures_utils::ActorFutureExt;
-use witnet_util::timestamp::pretty_print;
 
 /// Implement actor trait for Session
 impl Actor for Session {

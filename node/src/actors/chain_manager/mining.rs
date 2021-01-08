@@ -1,6 +1,3 @@
-use actix::{ActorFuture, AsyncContext, Context, ContextFutureSpawner, SystemService, WrapFuture};
-use ansi_term::Color::{White, Yellow};
-use futures::future::{try_join_all, FutureExt};
 use std::{
     collections::HashSet,
     convert::TryFrom,
@@ -12,6 +9,27 @@ use std::{
     },
 };
 
+use actix::{ActorFuture, AsyncContext, Context, ContextFutureSpawner, SystemService, WrapFuture};
+use ansi_term::Color::{White, Yellow};
+use futures::future::{try_join_all, FutureExt};
+use witnet_data_structures::{
+    chain::{
+        Block, BlockHeader, BlockMerkleRoots, BlockTransactions, Bn256PublicKey, CheckpointBeacon,
+        CheckpointVRF, DataRequestOutput, EpochConstants, Hash, Hashable, Input, PublicKeyHash,
+        ReputationEngine, TransactionsPool, ValueTransferOutput,
+    },
+    data_request::{calculate_witness_reward, create_tally, DataRequestPool},
+    error::TransactionError,
+    radon_report::{RadonReport, ReportContext},
+    transaction::{
+        CommitTransaction, CommitTransactionBody, DRTransactionBody, MintTransaction,
+        RevealTransaction, RevealTransactionBody, TallyTransaction, VTTransactionBody,
+    },
+    transaction_factory::build_commit_collateral,
+    utxo_pool::{UnspentOutputsPool, UtxoDiff},
+    vrf::{BlockEligibilityClaim, DataRequestEligibilityClaim, VrfMessage},
+};
+use witnet_futures_utils::{ActorFutureExt, TryFutureExt2};
 use witnet_rad::{error::RadError, types::serial_iter_decode};
 use witnet_util::timestamp::get_timestamp;
 use witnet_validations::validations::{
@@ -28,25 +46,6 @@ use crate::{
     },
     signature_mngr,
 };
-use witnet_data_structures::chain::Hash;
-use witnet_data_structures::{
-    chain::{
-        Block, BlockHeader, BlockMerkleRoots, BlockTransactions, Bn256PublicKey, CheckpointBeacon,
-        CheckpointVRF, DataRequestOutput, EpochConstants, Hashable, Input, PublicKeyHash,
-        ReputationEngine, TransactionsPool, ValueTransferOutput,
-    },
-    data_request::{calculate_witness_reward, create_tally, DataRequestPool},
-    error::TransactionError,
-    radon_report::{RadonReport, ReportContext},
-    transaction::{
-        CommitTransaction, CommitTransactionBody, DRTransactionBody, MintTransaction,
-        RevealTransaction, RevealTransactionBody, TallyTransaction, VTTransactionBody,
-    },
-    transaction_factory::build_commit_collateral,
-    utxo_pool::{UnspentOutputsPool, UtxoDiff},
-    vrf::{BlockEligibilityClaim, DataRequestEligibilityClaim, VrfMessage},
-};
-use witnet_futures_utils::{ActorFutureExt, TryFutureExt2};
 
 impl ChainManager {
     /// Try to mine a block

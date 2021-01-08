@@ -1,8 +1,8 @@
 //! Configuration
 
+use std::{net::SocketAddr, path::Path};
+
 use serde::{Deserialize, Serialize};
-use std::net::SocketAddr;
-use std::path::Path;
 use web3::types::H160;
 use witnet_data_structures::chain::Environment;
 
@@ -77,8 +77,7 @@ pub struct Gas {
 
 /// Load configuration from a file written in Toml format.
 pub fn from_file<S: AsRef<Path>>(file: S) -> Result<Config, Box<dyn std::error::Error>> {
-    use std::fs::File;
-    use std::io::Read;
+    use std::{fs::File, io::Read};
 
     let f = file.as_ref();
     let mut contents = String::new();

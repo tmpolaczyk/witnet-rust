@@ -14,19 +14,19 @@
 #![deny(unused_mut)]
 #![deny(missing_docs)]
 
-use std::sync::{Arc, Mutex, RwLock};
-use std::time::Duration;
+use std::{
+    sync::{Arc, Mutex, RwLock},
+    time::Duration,
+};
 
 use actix::prelude::*;
 use failure::Error;
 use rand::seq::SliceRandom;
-
 use witnet_config::config::Config;
 use witnet_data_structures::chain::{CheckpointBeacon, EpochConstants};
 use witnet_net::client::tcp::JsonRpcClient;
 
-use crate::actors::app;
-use crate::actors::app::NodeClient;
+use crate::actors::{app, app::NodeClient};
 
 mod account;
 mod actors;

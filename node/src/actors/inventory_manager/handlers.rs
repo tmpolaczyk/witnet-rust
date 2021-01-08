@@ -1,17 +1,18 @@
-use actix::prelude::*;
-use actix::{ActorFuture, Context, Handler, ResponseActFuture, WrapFuture};
+use actix::{prelude::*, ActorFuture, Context, Handler, ResponseActFuture, WrapFuture};
+use witnet_data_structures::{
+    chain::{Block, Hash, Hashable, InventoryEntry, InventoryItem, PointerToBlock},
+    transaction::Transaction,
+};
+use witnet_futures_utils::ActorFutureExt;
 
 use super::{InventoryManager, InventoryManagerError};
-use crate::actors::messages::{
-    AddItem, AddItems, GetItem, GetItemBlock, GetItemSuperblock, GetItemTransaction,
-    StoreInventoryItem, SuperBlockNotify,
+use crate::{
+    actors::messages::{
+        AddItem, AddItems, GetItem, GetItemBlock, GetItemSuperblock, GetItemTransaction,
+        StoreInventoryItem, SuperBlockNotify,
+    },
+    storage_mngr,
 };
-use crate::storage_mngr;
-use witnet_data_structures::chain::{
-    Block, Hash, Hashable, InventoryEntry, InventoryItem, PointerToBlock,
-};
-use witnet_data_structures::transaction::Transaction;
-use witnet_futures_utils::ActorFutureExt;
 
 fn key_superblock(superblock_index: u32) -> Vec<u8> {
     // Add 0 padding to the left of the superblock index to make sorted keys represent consecutive
@@ -315,12 +316,8 @@ impl Handler<GetItemSuperblock> for InventoryManager {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::{
-        actors::chain_manager::mining::build_block, config_mngr, storage_mngr,
-        utils::test_actix_system,
-    };
     use std::sync::Arc;
+
     use witnet_config::config::{Config, StorageBackend};
     use witnet_data_structures::{
         chain::{
@@ -331,6 +328,12 @@ mod tests {
         transaction::{Transaction, VTTransaction, VTTransactionBody},
         utxo_pool::UnspentOutputsPool,
         vrf::BlockEligibilityClaim,
+    };
+
+    use super::*;
+    use crate::{
+        actors::chain_manager::mining::build_block, config_mngr, storage_mngr,
+        utils::test_actix_system,
     };
 
     const INITIAL_BLOCK_REWARD: u64 = 250 * 1_000_000_000;

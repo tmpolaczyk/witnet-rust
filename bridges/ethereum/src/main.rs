@@ -1,11 +1,11 @@
 //! Witnet <> Ethereum bridge
-use futures::stream::Stream;
-use std::time::{Duration, Instant};
 use std::{
     path::PathBuf,
     sync::Arc,
-    time::{SystemTime, UNIX_EPOCH},
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
+
+use futures::stream::Stream;
 use structopt::StructOpt;
 use tokio::timer::Interval;
 use web3::{

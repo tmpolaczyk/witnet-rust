@@ -1,11 +1,11 @@
-use self::schema::witnet;
-use crate::types::IpAddress;
-use crate::{chain, types};
+use std::{convert::TryFrom, fmt::Debug};
+
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use failure::{ensure, format_err, Error};
 use protobuf::Message;
-use std::convert::TryFrom;
-use std::fmt::Debug;
+
+use self::schema::witnet;
+use crate::{chain, types, types::IpAddress};
 
 pub mod schema;
 

@@ -62,6 +62,7 @@ use witnet_data_structures::{
     utxo_pool::{Diff, OwnUnspentOutputsPool, UnspentOutputsPool},
     vrf::VrfCtx,
 };
+use witnet_futures_utils::ActorFutureExt;
 use witnet_rad::types::RadonTypes;
 use witnet_util::timestamp::seconds_to_human_string;
 use witnet_validations::validations::{
@@ -86,7 +87,6 @@ use crate::{
     },
     signature_mngr, storage_mngr,
 };
-use witnet_futures_utils::ActorFutureExt;
 
 mod actor;
 mod handlers;
@@ -2549,6 +2549,7 @@ pub fn log_removed_transactions(removed_transactions: &[Transaction], inserted_t
 
 #[cfg(test)]
 mod tests {
+    use witnet_config::{config::consensus_constants_from_partial, defaults::Testnet};
     use witnet_data_structures::{
         chain::{
             ChainInfo, Environment, KeyedSignature, PartialConsensusConstants, PublicKey,
@@ -2558,7 +2559,6 @@ mod tests {
     };
 
     pub use super::*;
-    use witnet_config::{config::consensus_constants_from_partial, defaults::Testnet};
 
     #[test]
     fn test_rep_info_update() {

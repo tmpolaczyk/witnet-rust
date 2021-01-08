@@ -1,5 +1,6 @@
-use serde_cbor::value::Value;
 use std::{collections::btree_map::BTreeMap, convert::TryFrom};
+
+use serde_cbor::value::Value;
 use witnet_rad::types::RadonTypes;
 
 #[test]

@@ -6,7 +6,6 @@ use actix::{
 };
 use bytes::BytesMut;
 use failure::Fail;
-
 use witnet_data_structures::{
     builders::from_address,
     chain::{
@@ -20,7 +19,9 @@ use witnet_data_structures::{
         Message as WitnetMessage, Peers, Version,
     },
 };
+use witnet_futures_utils::ActorFutureExt;
 use witnet_p2p::sessions::{SessionStatus, SessionType};
+use witnet_util::timestamp::get_timestamp;
 
 use super::Session;
 use crate::actors::{
@@ -37,8 +38,6 @@ use crate::actors::{
     peers_manager::PeersManager,
     sessions_manager::SessionsManager,
 };
-use witnet_futures_utils::ActorFutureExt;
-use witnet_util::timestamp::get_timestamp;
 
 #[derive(Debug, Eq, Fail, PartialEq)]
 enum HandshakeError {

@@ -1,16 +1,17 @@
 #[macro_use]
 extern crate bencher;
-use bencher::Bencher;
 use std::{convert::TryFrom, iter};
-use witnet_data_structures::chain::{Alpha, PublicKeyHash, Reputation, ReputationEngine};
 
+use bencher::Bencher;
+use witnet_data_structures::chain::{Alpha, PublicKeyHash, Reputation, ReputationEngine};
 // To benchmark the old algorithm, comment out this import:
 use witnet_validations::validations;
 // To benchmark the old algorithm, comment out the line that says cfg any:
 #[cfg(any())]
 mod validations {
-    use super::*;
     use witnet_data_structures::chain::Hash;
+
+    use super::*;
 
     pub fn calculate_reppoe_threshold(
         rep_eng: &ReputationEngine,

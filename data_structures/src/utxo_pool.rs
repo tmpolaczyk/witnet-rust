@@ -1,11 +1,13 @@
+use std::collections::{HashMap, HashSet};
+
+use itertools::Itertools;
+use serde::{Deserialize, Serialize};
+use witnet_util::timestamp::get_timestamp;
+
 use crate::{
     chain::{Epoch, Input, OutputPointer, PublicKeyHash, ValueTransferOutput},
     transaction_factory::OutputsCollection,
 };
-use itertools::Itertools;
-use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
-use witnet_util::timestamp::get_timestamp;
 
 /// Unspent Outputs Pool
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]

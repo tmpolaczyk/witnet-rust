@@ -1,11 +1,11 @@
-use actix::prelude::*;
-use serde::{Deserialize, Serialize};
 use std::str;
 
-use crate::actors::app;
-use crate::types;
+use actix::prelude::*;
 use futures_util::FutureExt;
+use serde::{Deserialize, Serialize};
 use witnet_futures_utils::ActorFutureExt;
+
+use crate::{actors::app, types};
 
 /// Create Wallet request, where name, description and overwrite are optional and backup_password
 /// is only needed if seed_source is xprv

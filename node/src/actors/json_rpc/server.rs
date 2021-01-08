@@ -1,9 +1,16 @@
-use actix::prelude::*;
-use actix::StreamHandler;
+use std::{
+    collections::{HashMap, HashSet},
+    net::SocketAddr,
+    rc::Rc,
+    sync::Arc,
+};
+
+use actix::{prelude::*, StreamHandler};
+use futures_util::compat::Compat01As03;
+use jsonrpc_pubsub::{PubSubHandler, Session};
 use tokio::net::{TcpListener, TcpStream};
 use tokio_util::codec::FramedRead;
-
-use std::{collections::HashMap, collections::HashSet, net::SocketAddr, rc::Rc, sync::Arc};
+use witnet_futures_utils::ActorFutureExt;
 
 use super::{
     connection::JsonRpc, json_rpc_methods::jsonrpc_io_handler, newline_codec::NewLineCodec,
@@ -13,9 +20,6 @@ use crate::{
     actors::messages::{BlockNotify, InboundTcpConnect, NodeStatusNotify, SuperBlockNotify},
     config_mngr,
 };
-use futures_util::compat::Compat01As03;
-use jsonrpc_pubsub::{PubSubHandler, Session};
-use witnet_futures_utils::ActorFutureExt;
 
 /// JSON RPC server
 #[derive(Default)]

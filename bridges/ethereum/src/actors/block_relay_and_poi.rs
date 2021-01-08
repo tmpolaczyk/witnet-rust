@@ -1,13 +1,12 @@
 //! Actor which receives Witnet superblocks, posts them to the block relay,
 //! and sends proofs of inclusion to Ethereum
 
-use crate::{actors::handle_receipt, actors::WitnetSuperBlock, config::Config, eth::EthState};
+use std::sync::Arc;
 
 use async_jsonrpc_client::{transports::tcp::TcpSocket, Transport};
 use ethabi::Bytes;
 use futures::{future::Either, sink::Sink, stream::Stream, sync::oneshot};
 use serde_json::json;
-use std::sync::Arc;
 use tokio::sync::mpsc;
 use web3::{
     contract,
@@ -17,6 +16,12 @@ use web3::{
 use witnet_data_structures::{
     chain::{Block, Hash, Hashable},
     transaction::{DRTransaction, TallyTransaction},
+};
+
+use crate::{
+    actors::{handle_receipt, WitnetSuperBlock},
+    config::Config,
+    eth::EthState,
 };
 
 /// Function to get blocks from the witnet client provided an array of block hashes

@@ -1,7 +1,8 @@
 #[macro_use]
 extern crate bencher;
-use bencher::Bencher;
 use std::ops::{AddAssign, SubAssign};
+
+use bencher::Bencher;
 use witnet_reputation::TotalReputationSet;
 
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]

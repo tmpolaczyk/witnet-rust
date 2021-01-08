@@ -1,4 +1,5 @@
 use std::convert::TryFrom;
+
 use witnet_node::actors::epoch_manager::{EpochManager, EpochManagerError};
 
 #[test]

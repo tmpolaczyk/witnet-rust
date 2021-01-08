@@ -1,5 +1,7 @@
-use std::collections::{BTreeMap, HashMap, HashSet};
-use std::convert::TryFrom;
+use std::{
+    collections::{BTreeMap, HashMap, HashSet},
+    convert::TryFrom,
+};
 
 use serde::{Deserialize, Serialize};
 
@@ -558,9 +560,8 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::{chain::*, transaction::*, vrf::*};
-
     use super::*;
+    use crate::{chain::*, transaction::*, vrf::*};
 
     fn add_data_requests() -> (u32, Hash, DataRequestPool, Hash) {
         let fake_block_hash = Hash::SHA256([1; 32]);

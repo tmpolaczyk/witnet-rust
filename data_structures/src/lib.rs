@@ -13,9 +13,11 @@
 #[macro_use]
 extern crate protobuf_convert;
 
-use crate::chain::Environment;
-use lazy_static::lazy_static;
 use std::sync::RwLock;
+
+use lazy_static::lazy_static;
+
+use crate::chain::Environment;
 
 /// Module containing functions to generate Witnet's protocol messages
 pub mod builders;

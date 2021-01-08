@@ -1,5 +1,6 @@
-use serde_cbor::value::{from_value, Value};
 use std::convert::TryFrom;
+
+use serde_cbor::value::{from_value, Value};
 
 use crate::{
     error::RadError,

@@ -1,15 +1,18 @@
 #[macro_use]
 extern crate bencher;
-use bencher::Bencher;
 use std::{convert::TryFrom, iter};
+
+use bencher::Bencher;
 use witnet_data_structures::chain::{Alpha, PublicKeyHash, Reputation, ReputationEngine};
 
 mod old {
-    use super::*;
-    use itertools::Itertools;
     use std::cmp::Ordering;
+
+    use itertools::Itertools;
     use witnet_crypto::hash::calculate_sha256;
     use witnet_data_structures::chain::Hash;
+
+    use super::*;
 
     /// Get ARS keys ordered by reputation. If tie, order by pkh.
     pub fn get_rep_ordered_ars_list(rep_eng: &ReputationEngine) -> Vec<PublicKeyHash> {

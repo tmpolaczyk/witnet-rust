@@ -1,7 +1,6 @@
+use std::{default::Default, path::PathBuf, sync::Arc};
+
 use actix::{Actor, SystemService};
-use std::default::Default;
-use std::path::PathBuf;
-use std::sync::Arc;
 use witnet_config::{config::Config, loaders::toml};
 use witnet_futures_utils::TryFutureExt2;
 

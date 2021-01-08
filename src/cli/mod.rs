@@ -1,10 +1,9 @@
 use std::{env, path::PathBuf};
 
+use env_logger::TimestampPrecision;
 use lazy_static::lazy_static;
 use structopt::StructOpt;
 use terminal_size as term;
-
-use env_logger::TimestampPrecision;
 use witnet_config as config;
 
 mod node;
@@ -96,9 +95,7 @@ fn configure_logger(opts: &LogOptions) -> env_logger::Builder {
 /// enabled. Note that telemetry is ultimately enabled through configuration.
 #[cfg(all(not(debug_assertions), feature = "telemetry"))]
 fn init_logger(opts: LogOptions) -> Option<sentry::internals::ClientInitGuard> {
-    use std::borrow::Cow;
-    use std::str::FromStr;
-    use std::sync::Arc;
+    use std::{borrow::Cow, str::FromStr, sync::Arc};
 
     // Configure the logger builder
     let mut logger_builder = configure_logger(&opts);

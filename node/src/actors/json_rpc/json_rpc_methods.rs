@@ -1,19 +1,23 @@
 use std::{
     collections::HashMap,
     convert::TryFrom,
+    future::Future,
     net::SocketAddr,
-    sync::atomic::{AtomicUsize, Ordering},
-    sync::Arc,
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    },
 };
 
 use actix::MailboxError;
 #[cfg(not(test))]
 use actix::SystemService;
+use futures::FutureExt;
+use futures_util::compat::Compat;
 use itertools::Itertools;
 use jsonrpc_core::{MetaIoHandler, Params, Value};
 use jsonrpc_pubsub::{PubSubHandler, Session, Subscriber, SubscriptionId};
 use serde::{Deserialize, Serialize};
-
 use witnet_crypto::key::KeyPath;
 use witnet_data_structures::{
     chain::{Block, Hash, Hashable, PublicKeyHash, StateMachine, SyncStatus},
@@ -21,6 +25,9 @@ use witnet_data_structures::{
     vrf::VrfMessage,
 };
 
+#[cfg(test)]
+use self::mock_actix::SystemService;
+use super::Subscriptions;
 use crate::{
     actors::{
         chain_manager::{ChainManager, ChainManagerError},
@@ -38,14 +45,6 @@ use crate::{
     },
     config_mngr, signature_mngr,
 };
-
-use super::Subscriptions;
-
-#[cfg(test)]
-use self::mock_actix::SystemService;
-use futures::FutureExt;
-use futures_util::compat::Compat;
-use std::future::Future;
 
 type JsonRpcResult = Result<Value, jsonrpc_core::Error>;
 
@@ -1504,7 +1503,6 @@ mod tests {
     use std::collections::BTreeSet;
 
     use jsonrpc_core::futures::sync::mpsc;
-
     use witnet_data_structures::{chain::RADRequest, transaction::*};
 
     use super::*;

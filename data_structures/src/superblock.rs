@@ -1,17 +1,17 @@
-use crate::chain::{
-    AltKeys, BlockHeader, Bn256PublicKey, CheckpointBeacon, Hash, Hashable, PublicKeyHash,
-    SuperBlock, SuperBlockVote,
-};
 use std::{
     collections::{HashMap, HashSet},
     convert::{TryFrom, TryInto},
 };
 
 use serde::{Deserialize, Serialize};
-
 use witnet_crypto::{
     hash::{calculate_sha256, Sha256},
     merkle::merkle_tree_root as crypto_merkle_tree_root,
+};
+
+use crate::chain::{
+    AltKeys, BlockHeader, Bn256PublicKey, CheckpointBeacon, Hash, Hashable, PublicKeyHash,
+    SuperBlock, SuperBlockVote,
 };
 
 /// Possible result of SuperBlockState::add_vote
@@ -641,12 +641,13 @@ pub fn hash_merkle_tree_root(hashes: &[Hash]) -> Hash {
 
 #[cfg(test)]
 mod tests {
+    use witnet_crypto::hash::{calculate_sha256, EMPTY_SHA256};
+
     use super::*;
     use crate::{
         chain::{BlockMerkleRoots, Bn256SecretKey, CheckpointBeacon, PublicKey},
         vrf::BlockEligibilityClaim,
     };
-    use witnet_crypto::hash::{calculate_sha256, EMPTY_SHA256};
 
     #[test]
     fn test_superblock_creation_no_blocks() {

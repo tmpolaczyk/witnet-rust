@@ -4,10 +4,14 @@ pub mod json_rpc_methods;
 mod newline_codec;
 mod server;
 
-pub use self::server::JsonRpcServer;
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
+
 use jsonrpc_core::Value;
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+
+pub use self::server::JsonRpcServer;
 
 /// Subscriptions. Indexed by method_name, then subscription id
 pub type Subscriptions = Arc<

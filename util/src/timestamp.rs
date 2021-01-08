@@ -1,9 +1,8 @@
+use std::{convert::TryFrom, sync::RwLock, time::Duration};
+
 use chrono::{prelude::*, TimeZone};
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
-use std::convert::TryFrom;
-use std::sync::RwLock;
-use std::time::Duration;
 
 /// NTP Timestamp difference
 #[derive(Debug, Default, Serialize, Deserialize, PartialEq, Clone)]

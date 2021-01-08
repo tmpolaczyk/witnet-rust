@@ -4,9 +4,13 @@ use actix::{
     ActorFuture, Addr, AsyncContext, Context, ContextFutureSpawner, MailboxError, SystemService,
     WrapFuture,
 };
-
 use ansi_term::Color::Cyan;
-
+use failure::Fail;
+use witnet_config::config::Config;
+use witnet_data_structures::{
+    chain::{Epoch, EpochConstants},
+    types::LastBeacon,
+};
 use witnet_p2p::sessions::{SessionType, Sessions};
 
 use self::beacons::Beacons;
@@ -20,12 +24,6 @@ use crate::actors::{
     },
     peers_manager::PeersManager,
     session::Session,
-};
-use failure::Fail;
-use witnet_config::config::Config;
-use witnet_data_structures::{
-    chain::{Epoch, EpochConstants},
-    types::LastBeacon,
 };
 
 mod actor;

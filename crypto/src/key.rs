@@ -19,12 +19,10 @@ use bech32::{FromBase32, ToBase32 as _};
 use byteorder::{BigEndian, ReadBytesExt as _};
 use failure::Fail;
 use hmac::{Hmac, Mac};
-pub use secp256k1::key::ONE_KEY;
+pub use secp256k1::{key::ONE_KEY, Signing, Verification};
 use secp256k1::{PublicKey, Secp256k1, SecretKey, SignOnly, VerifyOnly};
-pub use secp256k1::{Signing, Verification};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-
 use witnet_protected::Protected;
 
 /// The error type for [generate_master](generate_master)
@@ -499,8 +497,7 @@ fn get_chain_code_and_secret(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::mnemonic as bip39;
-    use crate::test_vectors::slip32_vectors;
+    use crate::{mnemonic as bip39, test_vectors::slip32_vectors};
 
     #[test]
     fn test_generate_master_invalid_seed() {
