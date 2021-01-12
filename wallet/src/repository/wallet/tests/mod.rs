@@ -677,7 +677,7 @@ fn test_index_transaction_output_affects_balance() {
     let body = VTTransactionBody::new(inputs, outputs);
 
     wallet
-        .index_block_transactions(&block, &[vtt_from_body(body)], true, false)
+        .index_block_transactions(&block, &[vtt_from_body(body)], true)
         .unwrap();
 
     assert_eq!(
@@ -729,10 +729,10 @@ fn test_index_transaction_input_affects_balance() {
     );
 
     wallet
-        .index_block_transactions(&a_block, &[vtt_from_body(txn1)], true, false)
+        .index_block_transactions(&a_block, &[vtt_from_body(txn1)], true)
         .unwrap();
     wallet
-        .index_block_transactions(&a_block, &[vtt_from_body(txn2)], true, false)
+        .index_block_transactions(&a_block, &[vtt_from_body(txn2)], true)
         .unwrap();
 
     assert_eq!(
@@ -767,15 +767,10 @@ fn test_index_transaction_does_not_duplicate_transactions() {
     let txn = VTTransactionBody::new(inputs, outputs);
 
     wallet
-        .index_block_transactions(
-            &block,
-            &[factories::vtt_from_body(txn.clone())],
-            true,
-            false,
-        )
+        .index_block_transactions(&block, &[factories::vtt_from_body(txn.clone())], true)
         .unwrap();
     wallet
-        .index_block_transactions(&block, &[factories::vtt_from_body(txn)], true, false)
+        .index_block_transactions(&block, &[factories::vtt_from_body(txn)], true)
         .unwrap();
 
     assert_eq!(1, db.get(&keys::transaction_next_id(account)).unwrap());
@@ -807,7 +802,7 @@ fn test_index_transaction_updates_address_info() {
     let vtt0_hash = vtt0.transaction.hash();
 
     wallet
-        .index_block_transactions(&block, &[vtt0], true, false)
+        .index_block_transactions(&block, &[vtt0], true)
         .unwrap();
 
     let address_updated = wallet
@@ -852,7 +847,7 @@ fn test_index_transaction_updates_address_info_two_outputs_same_address() {
     let vtt0_hash = vtt0.transaction.hash();
 
     wallet
-        .index_block_transactions(&block, &[vtt0], true, false)
+        .index_block_transactions(&block, &[vtt0], true)
         .unwrap();
 
     let address_updated = wallet
@@ -910,7 +905,7 @@ fn test_index_transaction_updates_address_info_two_transactions_same_address() {
     assert_ne!(vtt0_hash, vtt1_hash);
 
     wallet
-        .index_block_transactions(&block, &[vtt0, vtt1], true, false)
+        .index_block_transactions(&block, &[vtt0, vtt1], true)
         .unwrap();
 
     let address_updated = wallet
@@ -946,7 +941,7 @@ fn test_index_transaction_errors_if_balance_overflow() {
     let txn = VTTransactionBody::new(inputs, outputs);
 
     let err = wallet
-        .index_block_transactions(&block, &[factories::vtt_from_body(txn)], true, false)
+        .index_block_transactions(&block, &[factories::vtt_from_body(txn)], true)
         .unwrap_err();
 
     assert_eq!(
@@ -976,7 +971,6 @@ fn test_index_transaction_vtt_created_by_wallet() {
                 }],
             ))],
             true,
-            false,
         )
         .unwrap();
 
@@ -1002,7 +996,7 @@ fn test_index_transaction_vtt_created_by_wallet() {
 
     // index another block confirming the previously created vtt
     wallet
-        .index_block_transactions(&a_block, &[factories::vtt_from_body(vtt.body)], true, false)
+        .index_block_transactions(&a_block, &[factories::vtt_from_body(vtt.body)], true)
         .unwrap();
 
     // check that indeed, the previously created vtt now has a block associated with it
@@ -1082,7 +1076,6 @@ fn test_get_transaction() {
                 }],
             ))],
             true,
-            false,
         )
         .unwrap();
 
@@ -1115,7 +1108,7 @@ fn test_get_transaction() {
 
     // index another block confirming the previously created vtt
     wallet
-        .index_block_transactions(&a_block, &[factories::vtt_from_body(vtt.body)], true, false)
+        .index_block_transactions(&a_block, &[factories::vtt_from_body(vtt.body)], true)
         .unwrap();
     assert!(wallet.get_transaction(0, 1).is_ok());
 }
@@ -1149,7 +1142,6 @@ fn test_get_transactions() {
                 }],
             ))],
             true,
-            false,
         )
         .unwrap();
 
@@ -1189,7 +1181,7 @@ fn test_get_transactions() {
 
     // index another block confirming the previously created vtt
     wallet
-        .index_block_transactions(&a_block, &[factories::vtt_from_body(vtt.body)], true, false)
+        .index_block_transactions(&a_block, &[factories::vtt_from_body(vtt.body)], true)
         .unwrap();
     let x = wallet.transactions(0, 2).unwrap();
     assert_eq!(x.transactions.len(), 2);
@@ -1226,7 +1218,6 @@ fn test_create_vtt_with_locked_balance() {
                 }],
             ))],
             true,
-            false,
         )
         .unwrap();
 
@@ -1280,7 +1271,6 @@ fn test_create_vtt_with_multiple_outputs() {
                 }],
             ))],
             true,
-            false,
         )
         .unwrap();
 
