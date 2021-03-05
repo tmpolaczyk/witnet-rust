@@ -2535,16 +2535,16 @@ mod tests {
         let mut total = 0;
 
         // All the possible rescue committee vote combinations up to length N
-        let r = vec!["", "A", "B", "?"]
+        let r = vec!["", "A", "B", "?", "C", "D", "E"]
             .into_iter()
-            .combinations_with_replacement(6);
+            .combinations_with_replacement(4);
 
         for x in r {
             let rstr = &x.join("");
 
-            let n = vec!["", "A", "B", "?"]
+            let n = vec!["", "A", "B", "?", "C", "D", "E"]
                 .into_iter()
-                .combinations_with_replacement(6);
+                .combinations_with_replacement(4);
             for y in n {
                 let nstr = &y.join("");
                 if nstr.is_empty() {
@@ -2572,20 +2572,19 @@ mod tests {
         // All of this scenarios result in consensus A
         let n = &["A", "AA", "AAA", "AAAA", "AAAB", "AAA?"];
         // All the possible rescue committee vote combinations up to length 5
-        let r = vec!["", "A", "B", "?"]
+        let r = vec!["", "A", "B", "C", "D", "E", "?"]
             .into_iter()
             .combinations_with_replacement(5);
 
         for x in r {
             let rstr = &x.join("");
-            println!("{:?} => {:?}", x, rstr);
 
             for nstr in n {
                 let mut t = ConsensusTester::new();
                 // 1/1 vote: 100%
                 t.set_votes(nstr);
                 t.set_rescue_votes(rstr);
-                assert_eq!(t.consensus(), Consensus('A'));
+                assert_eq!(t.consensus(), Consensus('A'), "{:?} {:?} failed", nstr, rstr);
             }
         }
     }
