@@ -2511,7 +2511,7 @@ mod tests {
             self.add_votes();
 
             match self.ss.has_consensus() {
-                SuperBlockConsensus::SameAsLocal => {
+                SuperBlockConsensus::SameAsLocal(_must_consolidate) => {
                     panic!("This shouldn't happen because the local is random")
                 }
                 SuperBlockConsensus::Different(x) => TestConsensus::Consensus(hash_to_char(x)),
@@ -2547,7 +2547,7 @@ mod tests {
                 .combinations_with_replacement(6);
             for y in n {
                 let nstr = &y.join("");
-                if nstr == "" {
+                if nstr.is_empty() {
                     // panicked at 'attempt to calculate the remainder with a divisor of zero'
                     continue;
                 }
