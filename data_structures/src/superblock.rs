@@ -2443,9 +2443,17 @@ mod tests {
                 let public_key =
                     PublicKey::from_bytes([u8::try_from(idx).expect("too many identities"); 33]);
 
-                sbv.secp256k1_signature.public_key = public_key;
+                sbv.secp256k1_signature.public_key = public_key.clone();
                 ordered_identities.push(sbv.secp256k1_signature.public_key.pkh());
                 sbvs.push(sbv);
+
+                if c == '2' {
+                    // Simulate double vote
+                    let superblock_hash2 = char_to_hash('1');
+                    let mut sbv = SuperBlockVote::new_unsigned(superblock_hash2, superblock_index);
+                    sbv.secp256k1_signature.public_key = public_key;
+                    sbvs.push(sbv);
+                }
             }
 
             let idx_offset = ordered_identities.len();
@@ -2469,9 +2477,17 @@ mod tests {
                 let public_key =
                     PublicKey::from_bytes([u8::try_from(idx).expect("too many identities"); 33]);
 
-                sbv.secp256k1_signature.public_key = public_key;
+                sbv.secp256k1_signature.public_key = public_key.clone();
                 rescue_identities.insert(sbv.secp256k1_signature.public_key.pkh());
                 rescue_sbvs.push(sbv);
+
+                if c == '2' {
+                    // Simulate double vote
+                    let superblock_hash2 = char_to_hash('1');
+                    let mut sbv = SuperBlockVote::new_unsigned(superblock_hash2, superblock_index);
+                    sbv.secp256k1_signature.public_key = public_key;
+                    rescue_sbvs.push(sbv);
+                }
             }
 
             // Set ARS to this identities
@@ -2499,10 +2515,16 @@ mod tests {
             // Add votes
             for sbv in &sbvs {
                 let r = self.ss.add_vote(&sbv, superblock_index);
+                if r == AddSuperBlockVote::DoubleVote {
+                    continue;
+                }
                 assert_eq!(r, AddSuperBlockVote::ValidButDifferentHash);
             }
             for sbv in &rescue_sbvs {
                 let r = self.ss.add_vote(&sbv, superblock_index);
+                if r == AddSuperBlockVote::DoubleVote {
+                    continue;
+                }
                 assert_eq!(r, AddSuperBlockVote::ValidButDifferentHash);
             }
         }
@@ -2529,20 +2551,59 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
+    fn consensus_table() {
+        use TestConsensus::*;
+
+        let expected = [
+            // "" "A" "B" "?" "AA" "AB" "BC" "A?" "B?" "??"
+            /* "A" */
+            [Consensus('A'); 10],
+            /* "B" */ [Consensus('B'); 10],
+            /* "?" */
+            [
+                Unknown,
+                Consensus('A'),
+                Consensus('B'),
+                Unknown,
+                Consensus('A'),
+                Unknown,
+                Unknown,
+                Unknown,
+                Unknown,
+                Unknown,
+            ],
+        ];
+
+        let ns = ["A", "B", "?"];
+        let rs = ["", "A", "B", "?", "AA", "AB", "BC", "A?", "B?", "??"];
+
+        for (i, row) in expected.iter().enumerate() {
+            for (j, ex) in row.iter().enumerate() {
+                let mut t = ConsensusTester::new();
+                t.set_votes(ns[i]);
+                t.set_rescue_votes(rs[j]);
+                assert_eq!(&t.consensus(), ex, "{:?} {:?}", ns[i], rs[j]);
+            }
+        }
+    }
+
+    #[test]
+    #[ignore]
     fn consensus_matrix() {
         // If the normal committee has consensus A, the rescue committee is ignored and the
         // consensus is A
         let mut total = 0;
 
         // All the possible rescue committee vote combinations up to length N
-        let r = vec!["", "A", "B", "?", "C", "D", "E"]
+        let r = vec!["", "A", "B", "?", "2"]
             .into_iter()
             .combinations_with_replacement(4);
 
         for x in r {
             let rstr = &x.join("");
 
-            let n = vec!["", "A", "B", "?", "C", "D", "E"]
+            let n = vec!["", "A", "B", "?", "2"]
                 .into_iter()
                 .combinations_with_replacement(4);
             for y in n {
@@ -2564,6 +2625,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn consensus_n1_all() {
         // If the normal committee has consensus A, the rescue committee is ignored and the
         // consensus is A
@@ -2584,7 +2646,13 @@ mod tests {
                 // 1/1 vote: 100%
                 t.set_votes(nstr);
                 t.set_rescue_votes(rstr);
-                assert_eq!(t.consensus(), Consensus('A'), "{:?} {:?} failed", nstr, rstr);
+                assert_eq!(
+                    t.consensus(),
+                    Consensus('A'),
+                    "{:?} {:?} failed",
+                    nstr,
+                    rstr
+                );
             }
         }
     }
