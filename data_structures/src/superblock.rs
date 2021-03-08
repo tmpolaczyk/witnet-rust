@@ -2550,6 +2550,13 @@ mod tests {
         Unknown,
     }
 
+    fn c(normal_str: &str, rescue_str: &str) -> TestConsensus {
+        let mut t = ConsensusTester::new();
+        t.set_votes(normal_str);
+        t.set_rescue_votes(rescue_str);
+        t.consensus()
+    }
+
     #[test]
     #[ignore]
     fn consensus_table() {
@@ -2934,23 +2941,12 @@ mod tests {
         // committee votes for superblock B, there will be no consensus
         use TestConsensus::*;
 
-        let mut t = ConsensusTester::new();
-        // 2/4 votes: 50%
-        t.set_votes("AA??");
-        t.set_rescue_votes("BBBBBBBBBB");
-        assert_eq!(t.consensus(), Unknown);
+        assert_eq!(c("AA??", "BBBBBBBBBB"), Unknown);
+        assert_eq!(c("AAB?", "BBBBBBBBBB"), Unknown);
 
-        let mut t = ConsensusTester::new();
-        // 2/4 votes: 50%
-        t.set_votes("AABB");
-        t.set_rescue_votes("BBBBBBBBBB");
-        assert_eq!(t.consensus(), Consensus('B'));
-
-        let mut t = ConsensusTester::new();
-        // 2/4 votes: 50%
-        t.set_votes("AAB?");
-        t.set_rescue_votes("BBBBBBBBBB");
-        assert_eq!(t.consensus(), Unknown);
+        // In case of tie: the highest hash wins. In this case B > A
+        assert!(char_to_hash('B') > char_to_hash('A'));
+        assert_eq!(c("AABB", "BBBBBBBBBB"), Consensus('B'));
     }
 
     #[test]
@@ -3056,29 +3052,18 @@ mod tests {
         // committee votes for superblock A, the consensus will be superblock A
         use TestConsensus::*;
 
-        let mut t = ConsensusTester::new();
-        // 1/4 votes: 25%
-        t.set_votes("A???");
-        t.set_rescue_votes("AAAAAAAAAA");
-        assert_eq!(t.consensus(), Consensus('A'));
+        assert_eq!(c("ABCD", "AAAAAAAAAA"), Consensus('A'));
+        assert_eq!(c("ABC?", "AAAAAAAAAA"), Consensus('A'));
+        assert_eq!(c("AB??", "AAAAAAAAAA"), Consensus('A'));
+        assert_eq!(c("A???", "AAAAAAAAAA"), Consensus('A'));
+        assert_eq!(c("????", "AAAAAAAAAA"), Consensus('A'));
 
-        let mut t = ConsensusTester::new();
-        // 1/4 votes: 25%
-        t.set_votes("ABCD");
-        t.set_rescue_votes("AAAAAAAAAA");
-        assert_eq!(t.consensus(), Consensus('A'));
+        // The rescue committee needs 2/3 consensus
+        assert_eq!(c("ABCD", "AAAAAAABBB"), Consensus('A'));
+        assert_eq!(c("????", "AAAAAAABBB"), Consensus('A'));
 
-        let mut t = ConsensusTester::new();
-        // 1/4 votes: 25%
-        t.set_votes("AB??");
-        t.set_rescue_votes("AAAAAAAAAA");
-        assert_eq!(t.consensus(), Consensus('A'));
-
-        let mut t = ConsensusTester::new();
-        // 0/4 votes: 0%
-        t.set_votes("????");
-        t.set_rescue_votes("AAAAAAAAAA");
-        assert_eq!(t.consensus(), Consensus('A'));
+        // The rescue committee can vote for a different superblock
+        assert_eq!(c("ABCD", "EEEEEEEEEE"), Consensus('E'));
     }
 
     #[test]
@@ -3087,65 +3072,23 @@ mod tests {
         // committee has less than 2/3 consensus, there is no consensus
         use TestConsensus::*;
 
-        let mut t = ConsensusTester::new();
-        // 1/4 votes: 25%
-        t.set_votes("A???");
-        t.set_rescue_votes("");
-        assert_eq!(t.consensus(), Unknown);
+        // No rescue committee
+        assert_eq!(c("ABCD", ""), NoConsensus);
+        assert_eq!(c("ABC?", ""), NoConsensus);
+        assert_eq!(c("AB??", ""), Unknown);
+        assert_eq!(c("A???", ""), Unknown);
+        assert_eq!(c("????", ""), Unknown);
 
-        let mut t = ConsensusTester::new();
-        // 1/4 votes: 25%
-        t.set_votes("ABCD");
-        t.set_rescue_votes("");
-        assert_eq!(t.consensus(), NoConsensus);
-
-        let mut t = ConsensusTester::new();
-        // 1/4 votes: 25%
-        t.set_votes("AB??");
-        t.set_rescue_votes("");
-        assert_eq!(t.consensus(), Unknown);
-
-        let mut t = ConsensusTester::new();
-        // 1/4 votes: 25%
-        t.set_votes("????");
-        t.set_rescue_votes("");
-        assert_eq!(t.consensus(), Unknown);
-
-        let mut t = ConsensusTester::new();
-        // 1/4 votes: 25%
-        t.set_votes("ABCD");
-        t.set_rescue_votes("AAAAAA????");
-        assert_eq!(t.consensus(), Unknown);
-
-        let mut t = ConsensusTester::new();
-        // 1/4 votes: 25%
-        t.set_votes("ABCD");
-        t.set_rescue_votes("AAAAAABBBB");
-        assert_eq!(t.consensus(), NoConsensus);
-
-        let mut t = ConsensusTester::new();
-        // 1/4 votes: 25%
-        t.set_votes("AB??");
-        t.set_rescue_votes("AAAAAA????");
-        assert_eq!(t.consensus(), Unknown);
-
-        let mut t = ConsensusTester::new();
-        // 1/4 votes: 25%
-        t.set_votes("AB??");
-        t.set_rescue_votes("AAAAAABBBB");
-        assert_eq!(t.consensus(), Unknown);
-
-        let mut t = ConsensusTester::new();
-        // 0/4 votes: 0%
-        t.set_votes("????");
-        t.set_rescue_votes("AAAAAA????");
-        assert_eq!(t.consensus(), Unknown);
-
-        let mut t = ConsensusTester::new();
-        // 0/4 votes: 0%
-        t.set_votes("????");
-        t.set_rescue_votes("AAAAAABBBB");
-        assert_eq!(t.consensus(), Unknown);
+        // The rescue committee has missing votes or lack of consensus
+        assert_eq!(c("ABCD", "??????????"), Unknown);
+        assert_eq!(c("ABCD", "AAAAAA????"), Unknown);
+        assert_eq!(c("ABCD", "AAAAAABBBB"), NoConsensus);
+        assert_eq!(c("AB??", "??????????"), Unknown);
+        assert_eq!(c("AB??", "AAAAAA????"), Unknown);
+        assert_eq!(c("AB??", "AAAAAABBBB"), Unknown);
+        assert_eq!(c("????", "AAAAAA????"), Unknown);
+        assert_eq!(c("????", "??????????"), Unknown);
+        assert_eq!(c("????", "AAAAAABBBB"), Unknown);
     }
 
     #[test]
